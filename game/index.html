@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>КОД 8: Разломът на световете</title>
+<style>
+  :root{
+    --bg:#07111f; --panel:rgba(8,20,38,.92); --line:rgba(255,255,255,.14);
+    --text:#f5f8ff; --muted:#a9b7cd; --accent:#65e6ff; --gold:#ffd85a;
+    --good:#4cff9a; --bad:#ff607d; --warn:#ffb84d;
+    --team:#65e6ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:#020713;color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;overflow-x:hidden}
+  button,input,select{font:inherit}
+  button{border:0;cursor:pointer}
+  .hidden{display:none!important}
+  .screen{min-height:100vh}
+
+  /* INTRO */
+  #setupScreen{
+    position:relative;display:grid;place-items:center;padding:28px;overflow:hidden;
+    background:
+      radial-gradient(circle at 50% 20%,rgba(69,229,255,.18),transparent 30%),
+      linear-gradient(160deg,#050a18 0%,#0a1530 45%,#12091d 100%);
+  }
+  .intro-grid{position:absolute;inset:-50%;background-image:linear-gradient(rgba(86,230,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(86,230,255,.06) 1px,transparent 1px);background-size:45px 45px;transform:perspective(500px) rotateX(62deg) translateY(25%);animation:gridMove 12s linear infinite}
+  @keyframes gridMove{to{background-position:0 90px,90px 0}}
+  .setup-card{position:relative;z-index:2;width:min(980px,96vw);padding:34px;border:1px solid rgba(101,230,255,.35);border-radius:28px;background:rgba(3,12,28,.84);box-shadow:0 30px 100px rgba(0,0,0,.55),0 0 60px rgba(101,230,255,.12);backdrop-filter:blur(14px)}
+  .eyebrow{text-transform:uppercase;letter-spacing:.22em;color:var(--accent);font-weight:800;font-size:.82rem}
+  h1{margin:.35rem 0 .6rem;font-size:clamp(2.2rem,6vw,5.2rem);line-height:.95;letter-spacing:-.04em;text-shadow:0 0 30px rgba(101,230,255,.32)}
+  .lead{color:var(--muted);font-size:1.08rem;line-height:1.65;max-width:780px}
+  .setup-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:22px 0}
+  .segmented{display:flex;background:#0b1730;border:1px solid var(--line);border-radius:14px;padding:4px}
+  .segmented button{padding:10px 18px;border-radius:10px;background:transparent;color:var(--muted);font-weight:800}
+  .segmented button.active{background:linear-gradient(135deg,#0c86b5,#5ae0f7);color:#00131a}
+  .team-configs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}
+  .team-config{border:1px solid var(--line);border-radius:18px;padding:16px;background:rgba(255,255,255,.035)}
+  .team-config label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:6px}
+  .team-config input,.team-config select{width:100%;padding:12px 13px;border-radius:12px;border:1px solid var(--line);background:#07142a;color:white;outline:none;margin-bottom:10px}
+  .start-btn{width:100%;padding:17px;border-radius:15px;font-weight:900;letter-spacing:.08em;font-size:1.08rem;background:linear-gradient(135deg,#6df3ff,#46a7ff 55%,#865cff);color:#031019;box-shadow:0 15px 35px rgba(76,186,255,.28);transition:.2s}
+  .start-btn:hover{transform:translateY(-2px);filter:brightness(1.08)}
+
+  /* GAME SHELL */
+  #gameScreen{background:#020713;display:flex;flex-direction:column;min-height:100vh}
+  .topbar{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:12px 18px;background:rgba(2,8,18,.95);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+  .brand{font-weight:950;letter-spacing:.08em;color:var(--accent);white-space:nowrap}
+  .world-title{text-align:center;font-weight:900;letter-spacing:.05em}
+  .top-actions{display:flex;gap:8px}
+  .icon-btn{padding:9px 12px;border-radius:10px;background:#0c1930;color:white;border:1px solid var(--line)}
+
+  .hud{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px 14px;background:#050c19;border-bottom:1px solid var(--line)}
+  .team-hud{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.035);opacity:.66;transition:.3s;min-width:0}
+  .team-hud.active{opacity:1;box-shadow:0 0 0 2px var(--team-color),0 0 28px color-mix(in srgb,var(--team-color) 38%,transparent);transform:translateY(-1px)}
+  .team-avatar{width:46px;height:46px;display:grid;place-items:center;border-radius:50%;font-size:1.75rem;background:#0b1930;border:2px solid var(--team-color)}
+  .team-name{font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .team-meta{font-size:.78rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+  .team-score{font-weight:950;color:var(--gold);font-size:1.15rem}
+
+  .main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(360px,.9fr);min-height:0;flex:1}
+  .left-column{min-width:0;display:flex;flex-direction:column;background:#030914}
+
+  /* SCENE */
+  .scene{position:relative;min-height:420px;overflow:hidden;border-bottom:1px solid var(--line);isolation:isolate;background:#0b1730}
+  .scene::before,.scene::after{content:"";position:absolute;inset:0;pointer-events:none}
+  .scene-layer{position:absolute;inset:0;pointer-events:none}
+  .scene.city{background:linear-gradient(#050a29 0 50%,#170b2b 100%)}
+  .city::before{background:radial-gradient(circle at 70% 15%,#de7cff 0 3%,transparent 3.2%),linear-gradient(90deg,transparent 0 4%,rgba(46,219,255,.22) 4% 5%,transparent 5% 15%,rgba(255,71,184,.2) 15% 16%,transparent 16% 100%);opacity:.75}
+  .city .skyline{position:absolute;left:0;right:0;bottom:0;height:74%;background:linear-gradient(90deg,#07131f 0 7%,transparent 7% 9%,#0b1e32 9% 17%,transparent 17% 19%,#061726 19% 29%,transparent 29% 31%,#102443 31% 43%,transparent 43% 45%,#071528 45% 55%,transparent 55% 57%,#13233a 57% 70%,transparent 70% 72%,#071726 72% 83%,transparent 83% 85%,#10243f 85% 100%);clip-path:polygon(0 35%,7% 35%,7% 15%,13% 15%,13% 43%,21% 43%,21% 5%,29% 5%,29% 36%,38% 36%,38% 18%,45% 18%,45% 48%,55% 48%,55% 8%,64% 8%,64% 28%,74% 28%,74% 0,83% 0,83% 34%,92% 34%,92% 13%,100% 13%,100% 100%,0 100%);filter:drop-shadow(0 0 14px #18d9ff)}
+  .city .road{position:absolute;left:-10%;right:-10%;bottom:-8%;height:33%;background:linear-gradient(#17172d,#05050d);clip-path:polygon(28% 0,72% 0,100% 100%,0 100%)}
+  .city .road::after{content:"";position:absolute;left:49.4%;top:0;width:1.2%;height:100%;background:repeating-linear-gradient(#ffe65c 0 16px,transparent 16px 34px);transform:perspective(200px) rotateX(20deg)}
+  .vehicle{position:absolute;bottom:18%;left:-14%;font-size:2.4rem;filter:drop-shadow(0 0 14px #4cf4ff);animation:drive 8s linear infinite}
+  .vehicle.v2{bottom:28%;animation-delay:3.4s;animation-duration:11s;font-size:1.8rem}
+  @keyframes drive{to{left:115%}}
+
+  .scene.underwater{background:linear-gradient(#04233b,#043f55 55%,#021b2b)}
+  .underwater::before{background:radial-gradient(circle at 50% -20%,rgba(135,242,255,.55),transparent 48%),repeating-linear-gradient(105deg,transparent 0 80px,rgba(144,244,255,.07) 82px 105px);animation:waterLight 8s ease-in-out infinite alternate}
+  @keyframes waterLight{to{transform:translateX(40px);opacity:.55}}
+  .lab{position:absolute;left:8%;right:8%;bottom:7%;height:58%;border:5px solid #5edff2;border-radius:38px;background:rgba(5,27,48,.72);box-shadow:inset 0 0 50px rgba(86,225,255,.16),0 0 30px rgba(86,225,255,.3)}
+  .lab::before{content:"";position:absolute;left:7%;right:7%;top:14%;height:42%;border:3px solid rgba(128,238,255,.45);border-radius:22px;background:linear-gradient(180deg,rgba(53,160,186,.22),rgba(1,16,30,.3))}
+  .bubble{position:absolute;bottom:-40px;width:14px;height:14px;border:2px solid rgba(204,251,255,.75);border-radius:50%;animation:bubble 7s linear infinite}
+  @keyframes bubble{to{transform:translateY(-520px) scale(1.6);opacity:0}}
+  .fish{position:absolute;left:-12%;font-size:2.1rem;animation:swim 10s linear infinite}
+  .fish.f2{top:28%;animation-duration:14s;animation-delay:2s}.fish.f3{top:58%;animation-delay:5s;animation-duration:12s}
+  @keyframes swim{to{left:112%}}
+
+  .scene.temple{background:linear-gradient(#20130a,#3d210d 52%,#120b08)}
+  .temple::before{background:radial-gradient(circle at 50% 30%,rgba(255,193,82,.24),transparent 36%),repeating-linear-gradient(90deg,rgba(0,0,0,.1) 0 3px,transparent 3px 90px)}
+  .temple-gate{position:absolute;left:23%;right:23%;bottom:0;height:80%;border:28px solid #51351e;border-bottom:0;background:#0b0807;box-shadow:inset 0 0 0 6px #b07a38,0 0 40px rgba(255,161,67,.18)}
+  .temple-gate::before{content:"◆  ◈  ◆";position:absolute;top:16%;left:0;right:0;text-align:center;color:#f5b85b;font-size:2.1rem;letter-spacing:1.2rem;text-shadow:0 0 16px #ffad44}
+  .torch{position:absolute;bottom:26%;font-size:2.5rem;animation:flame .35s ease-in-out infinite alternate;filter:drop-shadow(0 0 18px #ff9a3d)}
+  .torch.t1{left:15%}.torch.t2{right:15%}
+  @keyframes flame{to{transform:scale(1.08) rotate(2deg)}}
+  .rolling-stone{position:absolute;right:-70px;bottom:8%;font-size:4.2rem;animation:stone 8s linear infinite}
+  @keyframes stone{to{right:110%;transform:rotate(-720deg)}}
+
+  .scene.space{background:radial-gradient(circle at 70% 30%,#273c78 0 4%,transparent 4.3%),radial-gradient(circle at 12% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 40% 60%,#fff 0 1px,transparent 2px),radial-gradient(circle at 85% 70%,#fff 0 1px,transparent 2px),linear-gradient(#020519,#071333)}
+  .earth{position:absolute;width:230px;height:230px;border-radius:50%;right:-55px;bottom:-48px;background:radial-gradient(circle at 35% 30%,#8ff7ff,#2087d2 42%,#07488a 64%,#052455 75%);box-shadow:0 0 70px rgba(77,192,255,.45);animation:float 6s ease-in-out infinite alternate}
+  .station{position:absolute;left:16%;top:24%;font-size:8rem;filter:drop-shadow(0 0 28px rgba(158,215,255,.45));animation:float 4s ease-in-out infinite alternate-reverse}
+  @keyframes float{to{transform:translateY(-14px) rotate(1deg)}}
+  .asteroid{position:absolute;left:-15%;top:18%;font-size:3rem;animation:asteroid 7s linear infinite}
+  .asteroid.a2{top:64%;animation-duration:11s;animation-delay:3s;font-size:2rem}
+  @keyframes asteroid{to{left:115%;transform:rotate(720deg)}}
+
+  .scene.core{background:radial-gradient(circle at 50% 48%,rgba(157,70,255,.58),transparent 18%),radial-gradient(circle at 50% 48%,#2affef 0 4%,#743cff 4.5% 9%,transparent 9.5%),linear-gradient(#070017,#140534)}
+  .core-ring{position:absolute;left:50%;top:48%;width:250px;height:250px;border:5px solid #67fff0;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 50px #6c53ff,inset 0 0 50px #6c53ff;animation:spin 5s linear infinite}
+  .core-ring::before,.core-ring::after{content:"";position:absolute;border-radius:50%;inset:18px;border:4px dashed #ff7be8;animation:spin 3s linear infinite reverse}
+  .core-ring::after{inset:55px;border-color:#ffe26a;animation-duration:2s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .scene-caption{position:absolute;left:20px;top:18px;z-index:8;max-width:52%;padding:11px 15px;border-radius:12px;background:rgba(0,0,0,.48);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px)}
+  .scene-caption strong{display:block;color:var(--accent);font-size:1.12rem}.scene-caption span{color:#d5def0;font-size:.87rem}
+  .turn-banner{position:absolute;left:50%;top:50%;z-index:30;transform:translate(-50%,-50%) scale(.72);opacity:0;pointer-events:none;padding:18px 30px;border-radius:18px;background:rgba(1,8,20,.9);border:2px solid var(--team);font-size:clamp(1.35rem,3vw,2.4rem);font-weight:950;letter-spacing:.08em;text-align:center;box-shadow:0 0 60px color-mix(in srgb,var(--team) 55%,transparent)}
+  .turn-banner.show{animation:turnFlash 1.45s ease forwards}
+  @keyframes turnFlash{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}20%,72%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.08)}}
+
+  /* MAP */
+  .map-wrap{padding:14px 18px 18px;background:#050d1c}
+  .map-label{display:flex;justify-content:space-between;color:var(--muted);font-size:.76rem;margin-bottom:8px}
+  .track{height:82px;position:relative;border-radius:18px;background:linear-gradient(90deg,#062740 0 25%,#064452 25% 50%,#6d421b 50% 75%,#191b52 75% 100%);border:1px solid var(--line);overflow:hidden}
+  .track::before{content:"";position:absolute;left:4%;right:4%;top:50%;height:5px;transform:translateY(-50%);background:repeating-linear-gradient(90deg,rgba(255,255,255,.75) 0 22px,rgba(255,255,255,.12) 22px 40px);border-radius:6px}
+  .track-node{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:#e7faff;border:3px solid #17324a;transform:translate(-50%,-50%);z-index:2}
+  .map-token{position:absolute;top:50%;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:1.35rem;transform:translate(-50%,-50%);z-index:5;border:3px solid var(--token-color);background:#071426;box-shadow:0 0 18px var(--token-color);transition:left 1.15s cubic-bezier(.2,.75,.25,1),top .35s}
+
+  /* CONTROL PANEL */
+  .panel{min-height:0;background:linear-gradient(#081326,#050c19);border-left:1px solid var(--line);display:flex;flex-direction:column}
+  .panel-head{padding:18px 18px 12px;border-bottom:1px solid var(--line)}
+  .turn-line{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .turn-team{font-size:1.2rem;font-weight:950;color:var(--team)}
+  .timer{min-width:76px;text-align:center;padding:8px 10px;border-radius:10px;background:#0b1930;border:1px solid var(--line);font-weight:950;color:var(--gold)}
+  .timer.danger{color:var(--bad);animation:pulse .65s infinite alternate}
+  @keyframes pulse{to{transform:scale(1.05);filter:brightness(1.25)}}
+  .mission{font-size:.88rem;color:var(--muted);margin-top:7px}
+
+  .panel-body{padding:17px;overflow:auto;flex:1}
+  .route-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .route-card{padding:16px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:white;text-align:left;transition:.2s;min-height:145px}
+  .route-card:hover{transform:translateY(-3px);border-color:var(--accent);background:rgba(101,230,255,.07)}
+  .route-card.risky:hover{border-color:var(--warn);background:rgba(255,184,77,.07)}
+  .route-icon{font-size:2rem}.route-title{font-weight:950;font-size:1.12rem;margin:8px 0 5px}.route-text{font-size:.83rem;color:var(--muted);line-height:1.45}
+
+  .task-card{border:1px solid var(--line);background:rgba(255,255,255,.035);border-radius:18px;padding:17px}
+  .task-type{display:inline-flex;padding:5px 9px;border-radius:999px;background:rgba(101,230,255,.12);color:var(--accent);font-weight:900;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase}
+  .task-text{font-size:1.08rem;line-height:1.55;margin:12px 0}.num{color:var(--gold);font-size:1.16em;font-weight:950}
+  .mini-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:14px 0 8px}
+  .operation-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .choice-btn{padding:13px;border-radius:12px;background:#0c1a31;border:1px solid var(--line);color:white;font-weight:900;transition:.18s}
+  .choice-btn:hover,.choice-btn.selected{border-color:var(--accent);box-shadow:0 0 20px rgba(101,230,255,.12);background:#0c2b3c}
+  .tokens{display:flex;flex-wrap:wrap;gap:8px}
+  .token-btn{min-width:44px;height:44px;padding:0 11px;border-radius:12px;background:#101f38;color:white;border:1px solid var(--line);font-weight:900;transition:.18s}
+  .token-btn:hover{transform:translateY(-2px)}
+  .token-btn.selected{background:var(--team);color:#031018;border-color:white;box-shadow:0 0 20px color-mix(in srgb,var(--team) 45%,transparent)}
+  .slots{display:flex;gap:8px;min-height:48px;align-items:center;flex-wrap:wrap;padding:8px;border-radius:12px;background:rgba(0,0,0,.22);border:1px dashed rgba(255,255,255,.2)}
+  .slot{min-width:42px;height:38px;padding:0 10px;display:grid;place-items:center;border-radius:10px;background:#16263f;color:var(--gold);font-weight:950}
+  .answer-row{display:flex;gap:9px;margin-top:14px}
+  .answer-row input{min-width:0;flex:1;padding:14px;border-radius:12px;border:2px solid #273a58;background:#071426;color:white;font-size:1.25rem;font-weight:900;text-align:center;outline:none}
+  .answer-row input:focus{border-color:var(--team)}
+  .primary-btn{padding:13px 16px;border-radius:12px;background:linear-gradient(135deg,var(--team),#7d80ff);color:#041018;font-weight:950;white-space:nowrap}
+  .primary-btn:disabled{opacity:.45;cursor:not-allowed}
+  .feedback{margin-top:12px;padding:12px;border-radius:12px;font-size:.92rem;line-height:1.45;border:1px solid transparent}
+  .feedback.good{background:rgba(76,255,154,.1);border-color:rgba(76,255,154,.35);color:#baffd4}
+  .feedback.bad{background:rgba(255,96,125,.1);border-color:rgba(255,96,125,.35);color:#ffc0cc}
+  .feedback.info{background:rgba(101,230,255,.09);border-color:rgba(101,230,255,.3);color:#c7f8ff}
+
+  .inventory{padding:12px 17px 16px;border-top:1px solid var(--line);background:#06101f}
+  .inventory-title{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
+  .inventory-row{display:flex;gap:8px;overflow:auto;padding-bottom:2px}
+  .item-btn{min-width:86px;padding:9px;border-radius:11px;background:#0d1c33;border:1px solid var(--line);color:white;font-size:.76rem;line-height:1.2}
+  .item-btn:disabled{opacity:.38;cursor:not-allowed}.item-btn b{display:block;font-size:1.25rem;margin-bottom:3px}
+
+  /* MODALS / EFFECTS */
+  .modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:22px;background:rgba(0,4,12,.78);backdrop-filter:blur(8px)}
+  .modal-card{width:min(620px,95vw);padding:28px;border-radius:24px;background:#08152b;border:1px solid rgba(255,255,255,.2);box-shadow:0 30px 100px rgba(0,0,0,.65);text-align:center}
+  .modal-card h2{font-size:clamp(1.7rem,5vw,3rem);margin:.25rem 0}.modal-card p{color:var(--muted);line-height:1.55}
+  .modal-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .secondary-btn{padding:12px 17px;border-radius:12px;background:#13233d;color:white;border:1px solid var(--line);font-weight:900}
+  .chest{font-size:5rem;display:inline-block;animation:chestBounce .7s ease infinite alternate;filter:drop-shadow(0 0 24px #ffd85a)}
+  @keyframes chestBounce{to{transform:translateY(-10px) rotate(3deg)}}
+  .shake{animation:shake .42s ease}
+  @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+  .confetti{position:fixed;z-index:130;top:-20px;width:10px;height:16px;animation:confetti 3.2s linear forwards}
+  @keyframes confetti{to{transform:translateY(110vh) rotate(900deg);opacity:.1}}
+  .damage-flash{position:fixed;inset:0;z-index:90;pointer-events:none;background:rgba(255,67,105,.35);animation:damage .45s ease forwards}
+  @keyframes damage{to{opacity:0}}
+
+  @media(max-width:980px){
+    .team-configs{grid-template-columns:1fr}.main{grid-template-columns:1fr}.panel{border-left:0;border-top:1px solid var(--line)}.scene{min-height:360px}.hud{grid-template-columns:1fr}.team-hud{display:none}.team-hud.active{display:grid}.topbar{grid-template-columns:1fr auto}.world-title{display:none}.route-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:560px){.setup-card{padding:22px}.route-grid{grid-template-columns:1fr}.answer-row{flex-direction:column}.scene{min-height:320px}.scene-caption{max-width:75%}.map-wrap{padding-inline:8px}.topbar{padding-inline:10px}}
+
+  /* V2: правила, лога и сюжетно свързани анимации */
+  .setup-card{width:min(1180px,96vw);padding:34px 34px 170px}
+  .intro-layout{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(330px,.88fr);gap:26px;align-items:start}
+  .intro-left,.intro-right{min-width:0}
+  .rules-card{margin-top:20px;padding:18px;border-radius:18px;border:1px solid rgba(101,230,255,.24);background:rgba(10,30,54,.58)}
+  .rules-title{display:flex;align-items:center;gap:10px;margin:0 0 13px;font-size:1.15rem;color:#d9fbff}
+  .rules-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .rule-step{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:start;padding:10px;border-radius:13px;background:rgba(255,255,255,.038);border:1px solid rgba(255,255,255,.09)}
+  .rule-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:#0c2341;font-size:1.2rem}
+  .rule-step b{display:block;margin-bottom:2px;font-size:.88rem}.rule-step span{display:block;color:var(--muted);font-size:.77rem;line-height:1.35}
+  .intro-right .setup-row{margin-top:0}.intro-right .team-configs{grid-template-columns:1fr;max-height:385px;overflow:auto;padding-right:4px;margin:14px 0}
+  .intro-logo{position:absolute;right:22px;bottom:12px;width:min(350px,34vw);max-height:150px;object-fit:contain;object-position:right bottom;filter:drop-shadow(0 0 18px rgba(0,200,210,.22));pointer-events:none}
+  .brand{display:flex;align-items:center;gap:9px}.brand-logo{width:43px;height:43px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(0,206,205,.35))}.brand span{font-weight:950;letter-spacing:.08em;color:var(--accent)}
+  .task-level{display:inline-flex;margin-left:7px;padding:5px 9px;border-radius:999px;background:rgba(255,216,90,.11);color:var(--gold);font-weight:900;font-size:.7rem;letter-spacing:.05em;text-transform:uppercase}
+  .method-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.method-grid.five{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .formula-line{margin-top:7px;color:#d9e9ff;font-family:Cambria,Georgia,serif;font-size:1.03rem}
+  .source-note{margin-top:10px;color:#71829c;font-size:.7rem}
+
+  /* Сюжетните обекти стоят в сцената, но се задействат само от отговора. */
+  .mission-actor{position:absolute;z-index:8;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;border:3px solid var(--team);background:rgba(2,14,28,.9);box-shadow:0 0 22px color-mix(in srgb,var(--team) 58%,transparent);font-size:2rem;left:7%;bottom:19%}
+  .city-portal{position:absolute;right:9%;bottom:16%;width:85px;height:145px;border:5px solid #ff5bd6;border-radius:44px 44px 14px 14px;box-shadow:0 0 30px #ff5bd6,inset 0 0 26px rgba(255,91,214,.28);opacity:.62}
+  .city-beam{position:absolute;left:19%;right:20%;bottom:28%;height:4px;background:linear-gradient(90deg,transparent,#55efff,transparent);opacity:.25}
+  .scene.good-event.city .mission-actor{animation:cityMission 1.35s cubic-bezier(.18,.72,.18,1) forwards}.scene.good-event.city .city-portal{animation:portalOpen 1.3s ease}.scene.bad-event.city .city-beam{animation:alarmBeam .22s linear 6}
+  @keyframes cityMission{45%{left:48%;transform:translateY(-22px) rotate(8deg)}100%{left:82%;transform:scale(.45);opacity:.2}}
+  @keyframes portalOpen{45%{opacity:1;filter:brightness(1.8);transform:scaleX(1.18)}100%{opacity:.7;transform:scaleX(1)}}
+  @keyframes alarmBeam{50%{opacity:1;box-shadow:0 0 18px #ff496f}}
+
+  .submarine{position:absolute;z-index:8;left:8%;bottom:20%;font-size:4rem;filter:drop-shadow(0 0 16px #68edff)}
+  .lab-lock{position:absolute;right:16%;bottom:24%;font-size:3.2rem;filter:drop-shadow(0 0 18px #69efff)}
+  .leak{position:absolute;right:23%;top:24%;font-size:3rem;opacity:0}
+  .scene.good-event.underwater .submarine{animation:subMission 1.45s ease-in-out forwards}.scene.good-event.underwater .lab-lock{animation:unlockPulse .8s ease 2}.scene.bad-event.underwater .leak{animation:leakBurst 1.4s ease}
+  @keyframes subMission{55%{left:48%;transform:rotate(-4deg)}100%{left:77%;transform:scale(.72);opacity:.35}}
+  @keyframes unlockPulse{50%{transform:scale(1.25);filter:drop-shadow(0 0 35px #8cffff)}}
+  @keyframes leakBurst{20%{opacity:1;transform:scale(.8)}70%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:translateY(80px)}}
+
+  .temple-runner{position:absolute;z-index:8;left:10%;bottom:8%;font-size:3.4rem;filter:drop-shadow(0 0 15px var(--team))}.temple-glyph{position:absolute;z-index:7;left:50%;top:32%;transform:translate(-50%,-50%);font-size:4.2rem;color:#f8c765;text-shadow:0 0 16px #ffad44}.rolling-stone{opacity:0;animation:none}
+  .scene.good-event.temple .temple-gate{animation:gateLift 1.45s ease forwards}.scene.good-event.temple .temple-runner{animation:templeRun 1.4s ease forwards}.scene.good-event.temple .temple-glyph{animation:glyphSolved .55s ease 2}.scene.bad-event.temple .rolling-stone{opacity:1;animation:stoneAttack 1.25s linear forwards}
+  @keyframes gateLift{to{transform:translateY(-58%);opacity:.28}}@keyframes templeRun{to{left:72%;transform:scale(.55);opacity:.25}}@keyframes glyphSolved{50%{transform:translate(-50%,-50%) scale(1.3);color:#8bffbd}}@keyframes stoneAttack{from{right:-90px;transform:rotate(0)}to{right:105%;transform:rotate(-720deg)}}
+
+  .space-ship{position:absolute;z-index:8;left:9%;top:50%;font-size:4.1rem;filter:drop-shadow(0 0 20px var(--team))}.target-satellite{position:absolute;z-index:7;right:17%;top:27%;font-size:5rem;filter:drop-shadow(0 0 20px #9ed8ff)}.energy-shot{position:absolute;z-index:6;left:20%;right:24%;top:52%;height:5px;background:linear-gradient(90deg,transparent,#7fffff,#ffe866);opacity:0;transform-origin:left}.asteroid{opacity:0;animation:none}
+  .scene.good-event.space .space-ship{animation:shipAdvance 1.35s ease forwards}.scene.good-event.space .energy-shot{animation:laserShot .75s ease}.scene.good-event.space .target-satellite{animation:satelliteSaved .7s ease 2}.scene.bad-event.space .asteroid{opacity:1;animation:asteroidStrike 1.25s linear forwards}
+  @keyframes shipAdvance{55%{left:40%;transform:translateY(-14px)}100%{left:67%;transform:scale(.68);opacity:.42}}@keyframes laserShot{20%{opacity:1;transform:scaleX(.2)}65%{opacity:1;transform:scaleX(1)}100%{opacity:0}}@keyframes satelliteSaved{50%{transform:scale(1.18) rotate(6deg);filter:drop-shadow(0 0 42px #8fffff)}}@keyframes asteroidStrike{from{left:-18%;top:18%;transform:rotate(0)}to{left:108%;top:72%;transform:rotate(560deg)}}
+  .scene.good-event.core .core-ring{animation:coreDamage .65s ease 2}.scene.bad-event.core .core-ring{animation:coreReject .25s ease 5}@keyframes coreDamage{50%{transform:translate(-50%,-50%) scale(.82);filter:hue-rotate(100deg) brightness(1.7)}}@keyframes coreReject{50%{transform:translate(-48%,-50%) scale(1.04)}}
+
+  @media(max-width:900px){.intro-layout{grid-template-columns:1fr}.setup-card{padding-bottom:135px}.intro-right .team-configs{max-height:none}.rules-grid{grid-template-columns:1fr 1fr}.intro-logo{width:260px;max-height:105px}}
+  @media(max-width:560px){.rules-grid{grid-template-columns:1fr}.setup-card{padding-bottom:112px}.intro-logo{width:195px;max-height:88px}.method-grid,.method-grid.five{grid-template-columns:1fr}.brand span{display:none}}
+
+  /* Единна навигация, малък авторски знак и 3D бутони */
+  .intro-logo{width:58px!important;max-height:58px!important;opacity:.72}
+  .brand-logo{display:block!important;width:38px!important;height:38px!important;opacity:.82}
+  button,.global-home{
+    box-shadow:0 5px 0 rgba(0,0,0,.62),0 10px 20px rgba(0,0,0,.36)!important;
+    translate:0 0;transition:translate .14s ease,box-shadow .14s ease,filter .14s ease!important
+  }
+  button:not(:disabled):hover,.global-home:hover{translate:0 -2px;filter:brightness(1.08)}
+  button:not(:disabled):active,.global-home:active{
+    translate:0 4px;box-shadow:0 1px 0 rgba(0,0,0,.7),0 4px 8px rgba(0,0,0,.3)!important
+  }
+  button:disabled{box-shadow:0 3px 0 rgba(0,0,0,.4)!important}
+  .global-home{
+    position:fixed;left:14px;bottom:14px;z-index:2147483647;padding:10px 15px;border-radius:999px;
+    background:rgba(4,15,31,.94);color:#d9fbff;border:1px solid rgba(101,230,255,.45);
+    text-decoration:none;font:800 14px/1.2 system-ui,sans-serif;backdrop-filter:blur(8px)
+  }
+
+</style>
+</head>
+<body>
+  <a href="../index.html" aria-label="Към началната страница" class="global-home">⌂ Начало</a>
+
+<section id="setupScreen" class="screen">
+  <div class="intro-grid"></div>
+  <div class="setup-card">
+    <div class="intro-layout">
+      <div class="intro-left">
+        <div class="eyebrow">Интерактивна приключенска игра по комбинаторика</div>
+        <h1>КОД 8:<br>РАЗЛОМЪТ НА СВЕТОВЕТЕ</h1>
+        <p class="lead">Главният математически код е разбит на четири фрагмента. Отборите трябва да преминат през Неоновия град, Подводната лаборатория, Храма на символите и Орбиталната станция, преди да достигнат Ядрото.</p>
+        <div class="rules-card">
+          <h2 class="rules-title"><span>🎮</span> Как се играе?</h2>
+          <div class="rules-grid">
+            <div class="rule-step"><div class="rule-icon">🔁</div><div><b>1. Редуващи се ходове</b><span>Само активният отбор използва мишката и клавиатурата.</span></div></div>
+            <div class="rule-step"><div class="rule-icon">🛡️</div><div><b>2. Избор на маршрут</b><span>Безопасният носи 1 позиция, а рисковият - 2 позиции и предмет.</span></div></div>
+            <div class="rule-step"><div class="rule-icon">🧩</div><div><b>3. Интерактивна мисия</b><span>Изберете модел, подредете символи или съставете екип и въведете отговора.</span></div></div>
+            <div class="rule-step"><div class="rule-icon">⏱️</div><div><b>4. Време за решение</b><span>Разполагате с 60 секунди, а при рисков маршрут - с 45.</span></div></div>
+            <div class="rule-step"><div class="rule-icon">📡</div><div><b>5. Прехващане</b><span>След грешка следващият отбор може да реши същата задача за кристал.</span></div></div>
+            <div class="rule-step"><div class="rule-icon">🏆</div><div><b>6. Победа</b><span>Съберете фрагментите и нанесете три успешни удара по защитата на Ядрото.</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="intro-right">
+        <div class="setup-row">
+          <strong>Брой отбори:</strong>
+          <div class="segmented" id="teamCountSelector">
+            <button type="button" data-count="2">2 отбора</button>
+            <button type="button" class="active" data-count="3">3 отбора</button>
+          </div>
+        </div>
+        <div class="team-configs">
+          <div class="team-config" data-config="0">
+            <label>Име на отбор 1</label><input value="АЛФА" maxlength="16" />
+            <label>Герой</label><select><option>🤖 Робот</option><option>🥷 Кибернинджа</option><option>🚀 Кораб</option><option>🐉 Мехадракон</option><option>🧑‍🚀 Изследовател</option></select>
+          </div>
+          <div class="team-config" data-config="1">
+            <label>Име на отбор 2</label><input value="ОМЕГА" maxlength="16" />
+            <label>Герой</label><select><option>🥷 Кибернинджа</option><option>🤖 Робот</option><option>🚀 Кораб</option><option>🐉 Мехадракон</option><option>🧑‍🚀 Изследовател</option></select>
+          </div>
+          <div class="team-config" data-config="2">
+            <label>Име на отбор 3</label><input value="НЕБУЛА" maxlength="16" />
+            <label>Герой</label><select><option>🐉 Мехадракон</option><option>🤖 Робот</option><option>🥷 Кибернинджа</option><option>🚀 Кораб</option><option>🧑‍🚀 Изследовател</option></select>
+          </div>
+        </div>
+        <button class="start-btn" id="startGameBtn">ИНИЦИИРАЙ МИСИЯТА</button>
+      </div>
+    </div>
+    <img class="intro-logo" src="../assets/brand-mark.png" alt="Знак на автора">
+  </div>
+</section>
+
+<section id="gameScreen" class="screen hidden">
+  <header class="topbar">
+    <div class="brand"><img class="brand-logo" src="../assets/brand-mark.png" alt="Знак на автора"><span>КОД 8</span></div>
+    <div class="world-title" id="worldTitle">НЕОНОВИЯТ ГРАД</div>
+    <div class="top-actions">
+      <button class="icon-btn" id="rulesBtn" title="Правила">❔ Правила</button>
+      <button class="icon-btn" id="soundBtn" title="Звук">🔊</button>
+      <button class="icon-btn" id="restartBtn" title="Нова игра">↻</button>
+    </div>
+  </header>
+
+  <div class="hud" id="hud"></div>
+
+  <main class="main">
+    <div class="left-column">
+      <section class="scene city" id="scene">
+        <div id="sceneDecor" class="scene-layer"></div>
+        <div class="scene-caption"><strong id="sceneName">Неоновият град</strong><span id="sceneStory">Изберете маршрут и преминете през охранителната мрежа.</span></div>
+        <div class="turn-banner" id="turnBanner"></div>
+      </section>
+
+      <section class="map-wrap">
+        <div class="map-label"><span>Неонов град</span><span>Подводна лаборатория</span><span>Храм</span><span>Орбитална станция</span><span>Ядро</span></div>
+        <div class="track" id="track"></div>
+      </section>
+    </div>
+
+    <aside class="panel" id="panel">
+      <div class="panel-head">
+        <div class="turn-line"><div class="turn-team" id="turnTeam">ХОД НА АЛФА</div><div class="timer" id="timer">--</div></div>
+        <div class="mission" id="missionText">Изберете маршрут.</div>
+      </div>
+      <div class="panel-body" id="panelBody"></div>
+      <div class="inventory">
+        <div class="inventory-title">Екипировка на активния отбор</div>
+        <div class="inventory-row" id="inventoryRow"></div>
+      </div>
+    </aside>
+  </main>
+</section>
+
+<div id="modal" class="modal hidden"><div class="modal-card" id="modalCard"></div></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const COLORS = ['#56e8ff','#ff8b4d','#a981ff'];
+  const AVATAR_MAP = {'🤖 Робот':'🤖','🥷 Кибернинджа':'🥷','🚀 Кораб':'🚀','🐉 Мехадракон':'🐉','🧑‍🚀 Изследовател':'🧑‍🚀'};
+  const WORLDS = [
+    {key:'city', title:'НЕОНОВИЯТ ГРАД', name:'Неоновият град', story:'Открийте правилния принцип и преминете през охранителната мрежа.'},
+    {key:'underwater', title:'ПОДВОДНАТА ЛАБОРАТОРИЯ', name:'Подводната лаборатория', story:'Подредете екипа, преди шлюзът да бъде блокиран.'},
+    {key:'temple', title:'ХРАМЪТ НА СИМВОЛИТЕ', name:'Храмът на символите', story:'Разчетете кодовете, при които редът променя всичко.'},
+    {key:'space', title:'ОРБИТАЛНАТА СТАНЦИЯ', name:'Орбиталната станция', story:'Сформирайте правилните групи и спасете станцията.'},
+    {key:'core', title:'ЯДРОТО НА СИСТЕМАТА', name:'Ядрото на системата', story:'Разпознайте модела и разрушете трите защитни слоя.'}
+  ];
+  const ITEMS = {
+    scanner:{icon:'🔎',name:'Скенер',desc:'Показва подсказка'},
+    reroll:{icon:'🔄',name:'Нов код',desc:'Сменя задачата'},
+    turbo:{icon:'⚡',name:'Турбо',desc:'+1 придвижване'},
+    freeze:{icon:'❄️',name:'Замразяване',desc:'+20 секунди'},
+    shield:{icon:'🛡️',name:'Щит',desc:'Пази от загуба на кристал'}
+  };
+  const METHOD_LABELS = {sum:'Правило за събиране',product:'Правило за умножение',permutation:'Пермутация',variation:'Вариация',combination:'Комбинация',mixed:'Комбиниран модел'};
+
+  const els = {
+    setup:document.getElementById('setupScreen'), game:document.getElementById('gameScreen'),
+    teamConfigs:[...document.querySelectorAll('.team-config')], teamCountSelector:document.getElementById('teamCountSelector'),
+    hud:document.getElementById('hud'), scene:document.getElementById('scene'), sceneDecor:document.getElementById('sceneDecor'),
+    sceneName:document.getElementById('sceneName'), sceneStory:document.getElementById('sceneStory'), worldTitle:document.getElementById('worldTitle'),
+    track:document.getElementById('track'), turnBanner:document.getElementById('turnBanner'), turnTeam:document.getElementById('turnTeam'),
+    missionText:document.getElementById('missionText'), timer:document.getElementById('timer'), panelBody:document.getElementById('panelBody'),
+    inventoryRow:document.getElementById('inventoryRow'), modal:document.getElementById('modal'), modalCard:document.getElementById('modalCard')
+  };
+
+  let state = {
+    teamCount:3, teams:[], active:0, currentTask:null, route:null, phase:'route', timerId:null, timeLeft:0,
+    sound:true, intercept:false, originalTeam:null, usedTurbo:false, locked:false, turnNumber:1, eventTimer:null
+  };
+
+  function fact(n){let r=1;for(let i=2;i<=n;i++)r*=i;return r}
+  function V(n,k){return Math.round(fact(n)/fact(n-k))}
+  function C(n,k){return Math.round(fact(n)/(fact(k)*fact(n-k)))}
+  function rnd(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+  function pick(arr){return arr[rnd(0,arr.length-1)]}
+  function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  function span(n){return `<span class="num">${n}</span>`}
+  function task(base){return {selected:[],action:null,difficulty:2,interaction:{kind:'none'},...base}}
+  function methodInteraction(correct, choices=['sum','product','permutation','variation','combination']){
+    return {kind:'method',correct,choices};
+  }
+  function orderInteraction(tokens,count,title='Направете пробна подредба'){
+    return {kind:'order',tokens,count,title};
+  }
+  function selectInteraction(tokens,count,title='Направете пробен избор',correctSet=null){
+    return {kind:'select',tokens,count,title,correctSet};
+  }
+  function countDistinctNumbers(digits,length,predicate=()=>true){
+    let count=0;
+    function go(prefix,remaining){
+      if(prefix.length===length){const num=Number(prefix.join(''));if(predicate(num,prefix))count++;return}
+      for(let i=0;i<remaining.length;i++){
+        const d=remaining[i];if(prefix.length===0&&d===0)continue;
+        go([...prefix,d],[...remaining.slice(0,i),...remaining.slice(i+1)]);
+      }
+    }
+    go([],digits);return count;
+  }
+
+  const TASK_BANK = {
+    0:[
+      {id:'city-routes',difficulty:1,build(){const a=rnd(5,11),b=rnd(6,13);return task({id:this.id,world:0,label:'Основен принцип',method:'sum',difficulty:1,text:`Охранителната зона може да бъде заобиколена по ${span(a)} покривни маршрута или по ${span(b)} подземни тунела. Избира се само един маршрут. Колко са всички възможности?`,answer:a+b,hint:'Двата вида маршрути са взаимноизключващи се - избирате или единия, или другия вид.',solution:`${a} + ${b} = ${a+b}`,interaction:methodInteraction('sum',['sum','product'])})}},
+      {id:'city-locks',difficulty:1,build(){const a=rnd(4,8),b=rnd(5,9);return task({id:this.id,world:0,label:'Последователен избор',method:'product',difficulty:1,text:`За вход се избира една от ${span(a)} ключалки и след това един от ${span(b)} скенера. По колко начина може да се премине през системата?`,answer:a*b,hint:'Всеки избор на ключалка може да се съчетае с всеки избор на скенер.',solution:`${a} · ${b} = ${a*b}`,interaction:methodInteraction('product',['sum','product'])})}},
+      {id:'city-three-stage',difficulty:2,build(){const a=rnd(3,6),b=rnd(4,7),c=rnd(2,5);return task({id:this.id,world:0,label:'Тристепенна система',method:'product',difficulty:2,text:`Мисията изисква избор на един от ${span(a)} входа, един от ${span(b)} кода и един от ${span(c)} аварийни изхода. Колко пълни плана са възможни?`,answer:a*b*c,hint:'Трите избора са последователни и независими.',solution:`${a} · ${b} · ${c} = ${a*b*c}`,interaction:methodInteraction('product',['sum','product'])})}},
+      {id:'city-two-networks',difficulty:2,build(){const a=rnd(3,6),b=rnd(4,8),c=rnd(2,5),d=rnd(5,9),ans=a*b+c*d;return task({id:this.id,world:0,label:'Две алтернативни мрежи',method:'mixed',difficulty:2,text:`До Ядрото може да се стигне или чрез ${span(a)} асансьора, всеки с ${span(b)} кода, или чрез ${span(c)} тунела, всеки с ${span(d)} портала. Колко различни плана има общо?`,answer:ans,hint:'Намерете плановете за всяка мрежа чрез умножение, после съберете двата несъвместими случая.',solution:`${a} · ${b} + ${c} · ${d} = ${ans}`,interaction:methodInteraction('mixed',['sum','product','mixed'])})}},
+      {id:'city-distribution',difficulty:2,build(){const a=rnd(3,7),b=rnd(4,8),c=rnd(2,5),ans=a*(b+c);return task({id:this.id,world:0,label:'Разпределителна мрежа',method:'mixed',difficulty:2,text:`Избира се един от ${span(a)} сървъра. От него сигналът може да се изпрати по един от ${span(b)} оптични или ${span(c)} радиоканала. Колко възможни предавания има?`,answer:ans,hint:'За всеки сървър има b + c възможни канала.',solution:`${a} · (${b} + ${c}) = ${ans}`,interaction:methodInteraction('mixed',['sum','product','mixed'])})}},
+      {id:'city-sandwich',difficulty:3,build(){const n=rnd(6,9),ans=C(n,1)+C(n,2);return task({id:this.id,world:0,label:'Избор на един или два модула',method:'mixed',difficulty:3,text:`Ремонтният комплект може да съдържа един или два различни модула измежду ${span(n)} налични. Колко различни комплекта могат да се съставят?`,answer:ans,hint:'Съберете броя на едноелементните и двуелементните комплекти.',solution:`C<sub>${n}</sub><sup>1</sup> + C<sub>${n}</sub><sup>2</sup> = ${n} + ${C(n,2)} = ${ans}`,interaction:methodInteraction('mixed',['sum','combination','mixed'])})}},
+      {id:'city-drone-or-rover',difficulty:3,build(){const a=rnd(4,7),b=rnd(3,6),c=rnd(3,6),d=rnd(4,8),ans=a*b+c*d;return task({id:this.id,world:0,label:'Алтернативни мисии',method:'mixed',difficulty:3,text:`Сигналът може да бъде доставен с дрон: ${span(a)} модела и ${span(b)} честоти, или с наземен робот: ${span(c)} модела и ${span(d)} маршрута. Колко са всички възможни мисии?`,answer:ans,hint:'Във всеки вид мисия изборите се умножават, а двата вида мисии се събират.',solution:`${a} · ${b} + ${c} · ${d} = ${ans}`,interaction:methodInteraction('mixed',['sum','product','mixed'])})}},
+      {id:'city-id-code',difficulty:3,build(){const letters=rnd(5,9),digits=rnd(6,10),symbols=rnd(3,5),ans=letters*digits*symbols;return task({id:this.id,world:0,label:'Съставен идентификатор',method:'product',difficulty:3,text:`Идентификаторът съдържа една от ${span(letters)} букви, една от ${span(digits)} цифри и един от ${span(symbols)} символа. Колко идентификатора могат да се създадат?`,answer:ans,hint:'Избира се по един елемент от всеки от трите вида.',solution:`${letters} · ${digits} · ${symbols} = ${ans}`,interaction:methodInteraction('product',['sum','product','mixed'])})}}
+    ],
+    1:[
+      {id:'perm-line',difficulty:1,build(){const n=rnd(5,7),tokens=Array.from({length:n},(_,i)=>String.fromCharCode(65+i));return task({id:this.id,world:1,label:'Пермутация в редица',method:'permutation',difficulty:1,text:`Пред шлюза чакат ${span(n)} различни агенти. По колко начина могат да се подредят в една редица?`,answer:fact(n),hint:'Използват се всички агенти и редът има значение.',solution:`P<sub>${n}</sub> = ${n}! = ${fact(n)}`,interaction:orderInteraction(tokens,Math.min(5,n),'Направете една възможна подредба')})}},
+      {id:'perm-books',difficulty:1,build(){const n=rnd(5,7),tokens=Array.from({length:n},(_,i)=>`Т${i+1}`);return task({id:this.id,world:1,label:'Подреждане на всички елементи',method:'permutation',difficulty:1,text:`В архива има ${span(n)} различни тома. По колко начина могат да се подредят на един рафт?`,answer:fact(n),hint:'Всички томове участват точно по веднъж.',solution:`P<sub>${n}</sub> = ${n}! = ${fact(n)}`,interaction:orderInteraction(tokens,Math.min(5,n),'Подредете пробно част от томовете')})}},
+      {id:'perm-fixed-first',difficulty:2,build(){const n=rnd(6,8),ans=fact(n-1);return task({id:this.id,world:1,label:'Фиксирано място',method:'permutation',difficulty:2,text:`В редица застават ${span(n)} агенти, но капитанът трябва да бъде първи. По колко начина могат да се подредят?`,answer:ans,hint:'Мястото на капитана е фиксирано; подреждат се останалите n - 1 агенти.',solution:`(${n}-1)! = ${n-1}! = ${ans}`,interaction:methodInteraction('permutation',['permutation','variation','combination'])})}},
+      {id:'perm-fixed-middle',difficulty:2,build(){const n=pick([5,7,9]),ans=fact(n-1);return task({id:this.id,world:1,label:'Фиксирана средна позиция',method:'permutation',difficulty:2,text:`В редица застават ${span(n)} души. Главният оператор трябва да бъде точно в средата. По колко начина могат да се подредят?`,answer:ans,hint:'Средното място е заето. Останалите n - 1 души се подреждат свободно.',solution:`(${n}-1)! = ${n-1}! = ${ans}`,interaction:methodInteraction('permutation',['permutation','variation','combination'])})}},
+      {id:'perm-together',difficulty:3,build(){const n=rnd(6,8),ans=2*fact(n-1);return task({id:this.id,world:1,label:'Двама винаги заедно',method:'mixed',difficulty:3,text:`В редица се подреждат ${span(n)} агенти. Двама конкретни агенти трябва да стоят един до друг. По колко начина може да стане това?`,answer:ans,hint:'Разглеждайте двамата като един блок, но вътре в блока могат да разменят местата си.',solution:`2 · (${n}-1)! = 2 · ${fact(n-1)} = ${ans}`,interaction:methodInteraction('mixed',['permutation','variation','mixed'])})}},
+      {id:'perm-not-together',difficulty:3,build(){const n=rnd(6,8),ans=fact(n)-2*fact(n-1);return task({id:this.id,world:1,label:'Двама не са един до друг',method:'mixed',difficulty:3,text:`В редица се подреждат ${span(n)} агенти. Двама конкретни агенти не трябва да стоят един до друг. Колко подредби са възможни?`,answer:ans,hint:'От всички подредби извадете подредбите, в които двамата са един блок.',solution:`${n}! - 2 · (${n}-1)! = ${fact(n)} - ${2*fact(n-1)} = ${ans}`,interaction:methodInteraction('mixed',['permutation','combination','mixed'])})}},
+      {id:'perm-circle',difficulty:3,build(){const n=rnd(6,8),ans=fact(n-1);return task({id:this.id,world:1,label:'Кръгова пермутация',method:'permutation',difficulty:3,text:`Около кръгла командна маса трябва да седнат ${span(n)} различни оператори. Подредби, получени само чрез завъртане, се считат за еднакви. Колко са различните подредби?`,answer:ans,hint:'При кръгова пермутация фиксирайте един човек и подредете останалите.',solution:`(${n}-1)! = ${ans}`,interaction:methodInteraction('permutation',['permutation','variation','combination'])})}},
+      {id:'perm-two-rows',difficulty:2,build(){const boys=rnd(4,6),girls=rnd(3,5),ans=fact(boys)*fact(girls);return task({id:this.id,world:1,label:'Две независими подредби',method:'mixed',difficulty:2,text:`За снимка ${span(boys)} агенти застават прави на задния ред, а ${span(girls)} анализатори седят на предния ред. По колко начина могат да се подредят?`,answer:ans,hint:'Подредете независимо хората във всеки ред, след което умножете.',solution:`${boys}! · ${girls}! = ${fact(boys)} · ${fact(girls)} = ${ans}`,interaction:methodInteraction('mixed',['permutation','product','mixed'])})}},
+      {id:'perm-alternate',difficulty:3,build(){const b=rnd(4,6),g=b-1,ans=fact(b)*fact(g);return task({id:this.id,world:1,label:'Редуване по условие',method:'mixed',difficulty:3,text:`Трябва да се подредят ${span(b)} киберзащитници и ${span(g)} навигатори така, че всеки навигатор да е между двама киберзащитници. Колко подредби са възможни?`,answer:ans,hint:'Първо подредете киберзащитниците. Навигаторите заемат всички вътрешни места между тях.',solution:`${b}! · ${g}! = ${fact(b)} · ${fact(g)} = ${ans}`,interaction:methodInteraction('mixed',['permutation','combination','mixed'])})}}
+    ],
+    2:[
+      {id:'var-pin',difficulty:1,build(){const k=rnd(4,5),ans=V(10,k),tokens=['0','1','2','3','4','5','6','7','8','9'];return task({id:this.id,world:2,label:'PIN код без повторение',method:'variation',difficulty:1,text:`PIN кодът съдържа ${span(k)} различни цифри от 0 до 9. Колко различни кода са възможни?`,answer:ans,hint:'Избират се k от 10 цифри, а редът в кода е важен. Нулата може да бъде първа, защото това е код.',solution:`V<sub>10</sub><sup>${k}</sup> = ${ans}`,interaction:orderInteraction(tokens,k,'Създайте един допустим пробен PIN')})}},
+      {id:'var-medals',difficulty:1,build(){const n=rnd(8,12),ans=V(n,3);return task({id:this.id,world:2,label:'Класиране',method:'variation',difficulty:1,text:`Във финал участват ${span(n)} състезатели. По колко начина могат да бъдат разпределени първото, второто и третото място?`,answer:ans,hint:'Избират се трима, но местата им са различни - редът има значение.',solution:`V<sub>${n}</sub><sup>3</sup> = ${n} · ${n-1} · ${n-2} = ${ans}`,interaction:methodInteraction('variation',['permutation','variation','combination'])})}},
+      {id:'var-officers',difficulty:2,build(){const n=rnd(12,18),ans=V(n,3);return task({id:this.id,world:2,label:'Различни длъжности',method:'variation',difficulty:2,text:`От клас с ${span(n)} ученици трябва да се изберат председател, заместник-председател и секретар. По колко начина може да стане това?`,answer:ans,hint:'Длъжностите са различни; размяната на двама ученици дава нов избор.',solution:`V<sub>${n}</sub><sup>3</sup> = ${ans}`,interaction:methodInteraction('variation',['permutation','variation','combination'])})}},
+      {id:'var-seats',difficulty:2,build(){const n=rnd(9,13),k=4,ans=V(n,k);return task({id:this.id,world:2,label:'Настаняване на места',method:'variation',difficulty:2,text:`Четирима приятели влизат в зала с ${span(n)} свободни места. По колко начина могат да заемат местата?`,answer:ans,hint:'Избират се 4 от местата и има значение кой човек на кое място седи.',solution:`V<sub>${n}</sub><sup>4</sup> = ${ans}`,interaction:methodInteraction('variation',['permutation','variation','combination'])})}},
+      {id:'var-flags',difficulty:2,build(){const n=rnd(7,9),k=3,ans=V(n,k);return task({id:this.id,world:2,label:'Подредени цветове',method:'variation',difficulty:2,text:`От ${span(n)} различни цветни ленти се прави трицветно знаме с хоризонтални ивици. Колко различни знамена могат да се получат без повторение на цвят?`,answer:ans,hint:'Избират се 3 цвята, а горна, средна и долна ивица са различни позиции.',solution:`V<sub>${n}</sub><sup>3</sup> = ${ans}`,interaction:orderInteraction(['🔴','🟠','🟡','🟢','🔵','🟣','⚪','🟤','⚫'].slice(0,n),3,'Подредете едно пробно знаме отгоре надолу')})}},
+      {id:'var-kdigit',difficulty:3,build(){const n=rnd(6,8),k=rnd(3,4),ans=(n-1)*V(n-1,k-1),digits=Array.from({length:n},(_,i)=>String(i));return task({id:this.id,world:2,label:'Число с нула в набора',method:'variation',difficulty:3,text:`С цифрите ${digits.join(', ')} се образуват ${span(k)}-цифрени числа с различни цифри. Колко са тези числа?`,answer:ans,hint:'Първата цифра не може да бъде 0. След избора ѝ подредете останалите k - 1 цифри.',solution:`${n-1} · V<sub>${n-1}</sub><sup>${k-1}</sup> = ${ans}`,interaction:selectInteraction(digits.slice(1),1,'Изберете допустима първа цифра')})}},
+      {id:'var-div5',difficulty:3,build(){const ans=952;return task({id:this.id,world:2,label:'Делимост и различни цифри',method:'mixed',difficulty:3,text:`Колко четирицифрени числа с различни цифри могат да се запишат с цифрите от 0 до 9 и се делят на 5?`,answer:ans,hint:'Последната цифра е 0 или 5. Разгледайте двата случая отделно, като първата цифра не може да е 0.',solution:`9 · 8 · 7 + 8 · 8 · 7 = 504 + 448 = ${ans}`,interaction:selectInteraction(['0','1','2','3','4','5','6','7','8','9'],2,'Изберете всички възможни последни цифри', ['0','5'])})}},
+      {id:'var-even',difficulty:3,build(){const ans=2296;return task({id:this.id,world:2,label:'Четни числа без повторение',method:'mixed',difficulty:3,text:`Колко четни четирицифрени числа с различни цифри могат да се образуват с цифрите от 0 до 9?`,answer:ans,hint:'Разделете на случаи: последна цифра 0 и последна цифра 2, 4, 6 или 8.',solution:`9 · 8 · 7 + 4 · 8 · 8 · 7 = 504 + 1792 = ${ans}`,interaction:selectInteraction(['0','1','2','3','4','5','6','7','8','9'],5,'Изберете всички възможни последни цифри', ['0','2','4','6','8'])})}},
+      {id:'var-div3',difficulty:3,build(){const digits=[0,1,2,4,5,6],ans=countDistinctNumbers(digits,3,n=>n%3===0);return task({id:this.id,world:2,label:'Делимост на число',method:'mixed',difficulty:3,text:`Колко трицифрени числа с различни цифри могат да се образуват с 0, 1, 2, 4, 5 и 6 и се делят на 3?`,answer:ans,hint:'Сумата на цифрите трябва да се дели на 3, а първата цифра не може да бъде 0.',solution:`След разделяне по допустими тройки и подредби се получават ${ans} числа.`,interaction:methodInteraction('mixed',['variation','combination','mixed'])})}},
+      {id:'var-phone',difficulty:2,build(){const ans=V(8,3);return task({id:this.id,world:2,label:'Фиксирано начало на код',method:'variation',difficulty:2,text:`Телефонен код съдържа 5 различни цифри и започва с 25. Колко са възможностите за останалите три цифри?`,answer:ans,hint:'Цифрите 2 и 5 вече са използвани. Остават 8 цифри за три подредени позиции.',solution:`V<sub>8</sub><sup>3</sup> = ${ans}`,interaction:methodInteraction('variation',['permutation','variation','combination'])})}}
+    ],
+    3:[
+      {id:'comb-team',difficulty:1,build(){const n=rnd(8,13),k=rnd(3,5),ans=C(n,k),people=['Пилот','Инженер','Лекар','Механик','Програмист','Навигатор','Биолог','Техник','Аналитик','Оператор','Физик','Капитан','Химик'];return task({id:this.id,world:3,label:'Избор на екип',method:'combination',difficulty:1,text:`От ${span(n)} специалисти трябва да се избере екип от ${span(k)} души. По колко начина може да се състави екипът?`,answer:ans,hint:'Редът на избраните хора няма значение.',solution:`C<sub>${n}</sub><sup>${k}</sup> = ${ans}`,interaction:selectInteraction(people.slice(0,n),k,'Съставете един пробен екип')})}},
+      {id:'comb-fruit',difficulty:1,build(){const n=rnd(5,8),k=3,ans=C(n,k),fruits=['Банан','Круша','Портокал','Ябълка','Киви','Праскова','Ананас','Манго'];return task({id:this.id,world:3,label:'Избор без подреждане',method:'combination',difficulty:1,text:`В десерт се слагат ${span(k)} различни вида плод измежду ${span(n)} налични. Колко различни десерта могат да се направят?`,answer:ans,hint:'Един и същ набор плодове дава един и същ десерт, независимо от реда на избирането.',solution:`C<sub>${n}</sub><sup>${k}</sup> = ${ans}`,interaction:selectInteraction(fruits.slice(0,n),k,'Изберете един пробен десерт')})}},
+      {id:'comb-cards',difficulty:1,build(){const n=rnd(8,12),k=rnd(3,5),ans=C(n,k);return task({id:this.id,world:3,label:'Изтегляне на карти',method:'combination',difficulty:1,text:`От ${span(n)} различни карти едновременно се изтеглят ${span(k)}. По колко начина може да стане това?`,answer:ans,hint:'Картите се избират като група; редът на изтеглянето не се отчита.',solution:`C<sub>${n}</sub><sup>${k}</sup> = ${ans}`,interaction:methodInteraction('combination',['permutation','variation','combination'])})}},
+      {id:'comb-test',difficulty:2,build(){const n=rnd(10,14),k=rnd(5,7),ans=C(n,k);return task({id:this.id,world:3,label:'Съставяне на контролна работа',method:'combination',difficulty:2,text:`Учителят е подготвил ${span(n)} различни задачи и трябва да избере ${span(k)} от тях, без да ги подрежда. Колко варианта на контролна работа са възможни?`,answer:ans,hint:'Избира се подмножество от задачи.',solution:`C<sub>${n}</sub><sup>${k}</sup> = ${ans}`,interaction:methodInteraction('combination',['permutation','variation','combination'])})}},
+      {id:'comb-attractions',difficulty:1,build(){const n=rnd(6,9),ans=C(n,2);return task({id:this.id,world:3,label:'Двойки',method:'combination',difficulty:1,text:`Всеки ден се избират точно две различни забавления измежду ${span(n)} възможни и една и съща двойка не се повтаря. Колко най-много дни могат да се съставят?`,answer:ans,hint:'Търси се броят на различните двойки.',solution:`C<sub>${n}</sub><sup>2</sup> = ${ans}`,interaction:methodInteraction('combination',['variation','combination','product'])})}},
+      {id:'comb-football',difficulty:2,build(){const n=rnd(9,14),ans=C(n,2);return task({id:this.id,world:3,label:'Среща на всеки с всеки',method:'combination',difficulty:2,text:`В турнир участват ${span(n)} отбора и всеки два отбора играят точно един мач. Колко мача ще се изиграят?`,answer:ans,hint:'Всеки мач се определя от неупорядочена двойка отбори.',solution:`C<sub>${n}</sub><sup>2</sup> = ${ans}`,interaction:methodInteraction('combination',['variation','combination','product'])})}},
+      {id:'comb-diagonals',difficulty:3,build(){const n=rnd(10,16),ans=C(n,2)-n;return task({id:this.id,world:3,label:'Диагонали на многоъгълник',method:'mixed',difficulty:3,text:`Колко диагонала има изпъкнал ${span(n)}-ъгълник?`,answer:ans,hint:'Всеки две върхове определят отсечка. Извадете n-те страни на многоъгълника.',solution:`C<sub>${n}</sub><sup>2</sup> - ${n} = ${C(n,2)} - ${n} = ${ans}`,interaction:methodInteraction('mixed',['combination','variation','mixed'])})}},
+      {id:'comb-triangles',difficulty:2,build(){const n=rnd(8,12),ans=C(n,3);return task({id:this.id,world:3,label:'Триъгълници от точки',method:'combination',difficulty:2,text:`Върху окръжност са отбелязани ${span(n)} точки. Колко триъгълника с върхове измежду тези точки могат да се образуват?`,answer:ans,hint:'Всеки избор на три точки определя един триъгълник.',solution:`C<sub>${n}</sub><sup>3</sup> = ${ans}`,interaction:methodInteraction('combination',['permutation','variation','combination'])})}},
+      {id:'comb-two-subjects',difficulty:3,build(){const a=rnd(7,9),g=rnd(5,7),x=3,y=2,ans=C(a,x)*C(g,y);return task({id:this.id,world:3,label:'Избор от две групи',method:'mixed',difficulty:3,text:`За контролна работа трябва да се изберат ${span(x)} задачи по алгебра от ${span(a)} и ${span(y)} задачи по геометрия от ${span(g)}. Колко варианта са възможни?`,answer:ans,hint:'Изборите от двете групи са независими - намерете комбинациите във всяка група и умножете.',solution:`C<sub>${a}</sub><sup>${x}</sup> · C<sub>${g}</sub><sup>${y}</sup> = ${C(a,x)} · ${C(g,y)} = ${ans}`,interaction:methodInteraction('mixed',['combination','product','mixed'])})}},
+      {id:'comb-balls',difficulty:3,build(){const r=rnd(5,8),b=rnd(9,13),x=2,y=2,ans=C(r,x)*C(b,y);return task({id:this.id,world:3,label:'Точно определен състав',method:'mixed',difficulty:3,text:`В контейнер има ${span(r)} червени и ${span(b)} сини сфери. По колко начина могат едновременно да се изберат точно ${span(x)} червени и ${span(y)} сини?`,answer:ans,hint:'Изберете независимо сферите от двата цвята, след което умножете.',solution:`C<sub>${r}</sub><sup>${x}</sup> · C<sub>${b}</sub><sup>${y}</sup> = ${ans}`,interaction:methodInteraction('mixed',['combination','product','mixed'])})}},
+      {id:'comb-queens',difficulty:3,build(){const r=rnd(1,2),ans=C(4,r)*C(28,6-r);return task({id:this.id,world:3,label:'Точно определен брой специални карти',method:'mixed',difficulty:3,text:`От тесте с 32 карти, в което има 4 дами, се избират 6 карти. В колко избора има точно ${span(r)} ${r===1?'дама':'дами'}?`,answer:ans,hint:'Изберете дамите от 4-те и останалите карти от 28-те карти, които не са дами.',solution:`C<sub>4</sub><sup>${r}</sup> · C<sub>28</sub><sup>${6-r}</sup> = ${ans}`,interaction:methodInteraction('mixed',['combination','product','mixed'])})}},
+      {id:'comb-atleast-queen',difficulty:3,build(){const ans=C(32,6)-C(28,6);return task({id:this.id,world:3,label:'Поне един специален елемент',method:'mixed',difficulty:3,text:`От тесте с 32 карти, в което има 4 дами, се избират 6 карти. В колко избора има поне една дама?`,answer:ans,hint:'От всички избори извадете изборите без нито една дама.',solution:`C<sub>32</sub><sup>6</sup> - C<sub>28</sub><sup>6</sup> = ${C(32,6)} - ${C(28,6)} = ${ans}`,interaction:methodInteraction('mixed',['combination','sum','mixed'])})}},
+      {id:'comb-lines',difficulty:3,build(){const n=rnd(7,10),p=rnd(3,Math.min(5,n-2)),ans=C(n,2)-C(p,2);return task({id:this.id,world:3,label:'Пресечни точки с успоредни прави',method:'mixed',difficulty:3,text:`В равнина са дадени ${span(n)} прави, никои три не минават през една точка, но ${span(p)} от тях са успоредни. Колко различни пресечни точки имат правите?`,answer:ans,hint:'От всички двойки прави извадете двойките сред успоредните прави.',solution:`C<sub>${n}</sub><sup>2</sup> - C<sub>${p}</sub><sup>2</sup> = ${ans}`,interaction:methodInteraction('mixed',['combination','variation','mixed'])})}}
+    ],
+    4:[
+      {id:'final-committee',difficulty:2,build(){const n=rnd(11,15),ans=n*(n-1)*C(n-2,3);return task({id:this.id,world:4,label:'Команден съвет',method:'mixed',difficulty:2,text:`От ${span(n)} души трябва да се изберат председател, секретар и трима обикновени членове на комисия. По колко начина може да стане това?`,answer:ans,hint:'Изберете двете различни длъжности с ред, след това трима членове без ред.',solution:`V<sub>${n}</sub><sup>2</sup> · C<sub>${n-2}</sub><sup>3</sup> = ${n*(n-1)} · ${C(n-2,3)} = ${ans}`,interaction:methodInteraction('mixed',['permutation','variation','combination','mixed'])})}},
+      {id:'final-boys-girls',difficulty:2,build(){const b=rnd(12,16),g=rnd(14,20),ans=C(b,2)*C(g,3);return task({id:this.id,world:4,label:'Представителна група',method:'mixed',difficulty:2,text:`От ${span(b)} момчета и ${span(g)} момичета трябва да се изберат 2 момчета и 3 момичета. По колко начина може да се състави групата?`,answer:ans,hint:'Направете независим избор от двете групи и умножете.',solution:`C<sub>${b}</sub><sup>2</sup> · C<sub>${g}</sub><sup>3</sup> = ${ans}`,interaction:methodInteraction('mixed',['combination','product','mixed'])})}},
+      {id:'final-defective',difficulty:2,build(){const total=rnd(16,20),bad=rnd(4,6),take=5,need=2,ans=C(bad,need)*C(total-bad,take-need);return task({id:this.id,world:4,label:'Точно два нестандартни детайла',method:'mixed',difficulty:2,text:`В партида от ${span(total)} детайла ${span(bad)} са нестандартни. По колко начина могат да се изберат 5 детайла, от които точно 2 са нестандартни?`,answer:ans,hint:'Изберете 2 нестандартни и 3 стандартни детайла.',solution:`C<sub>${bad}</sub><sup>2</sup> · C<sub>${total-bad}</sub><sup>3</sup> = ${ans}`,interaction:methodInteraction('mixed',['combination','product','mixed'])})}},
+      {id:'final-team-sizes',difficulty:3,build(){const n=rnd(7,10),ans=C(n,2)+C(n,3)+C(n,4);return task({id:this.id,world:4,label:'Отбори с различен брой участници',method:'mixed',difficulty:3,text:`От ${span(n)} равностойни ученици могат да се сформират отбори от 2, 3 или 4 души. Колко различни отбора са възможни общо?`,answer:ans,hint:'Съберете комбинациите за всеки от трите допустими размера.',solution:`C<sub>${n}</sub><sup>2</sup> + C<sub>${n}</sub><sup>3</sup> + C<sub>${n}</sub><sup>4</sup> = ${ans}`,interaction:methodInteraction('mixed',['sum','combination','mixed'])})}},
+      {id:'final-program',difficulty:3,build(){const ans=V(9,5)-20*V(7,3);return task({id:this.id,world:4,label:'Програма с ограничение',method:'mixed',difficulty:3,text:`От 9 различни учебни предмета се съставя програма от 5 различни часа. История и география не могат да присъстват едновременно. Колко програми са възможни?`,answer:ans,hint:'От всички програми извадете тези, които съдържат и двата забранени предмета. За тях изберете две различни позиции и подредете още 3 от останалите 7 предмета.',solution:`V<sub>9</sub><sup>5</sup> - 5 · 4 · V<sub>7</sub><sup>3</sup> = ${V(9,5)} - ${20*V(7,3)} = ${ans}`,interaction:methodInteraction('mixed',['variation','sum','mixed'])})}},
+      {id:'final-alternate',difficulty:3,build(){const ans=fact(5)*fact(4);return task({id:this.id,world:4,label:'Подреждане с места между елементи',method:'mixed',difficulty:3,text:`В редица трябва да се подредят 5 младежи и 4 девойки така, че всяка девойка да бъде между двама младежи. Колко подредби са възможни?`,answer:ans,hint:'Подредете първо младежите. Четирите девойки трябва да заемат четирите вътрешни места между тях.',solution:`5! · 4! = ${fact(5)} · ${fact(4)} = ${ans}`,interaction:methodInteraction('mixed',['permutation','combination','mixed'])})}},
+      {id:'final-mixed-pairs',difficulty:3,build(){const b=10,g=6,p=4,ans=C(b,p)*C(g,p)*fact(p);return task({id:this.id,world:4,label:'Сформиране на смесени двойки',method:'mixed',difficulty:3,text:`От 10 момчета и 6 момичета трябва да се сформират 4 смесени двойки за турнир. По колко начина може да стане това?`,answer:ans,hint:'Изберете участниците от двете групи, след което съпоставете избраните момчета с избраните момичета.',solution:`C<sub>10</sub><sup>4</sup> · C<sub>6</sub><sup>4</sup> · 4! = ${ans}`,interaction:methodInteraction('mixed',['combination','permutation','mixed'])})}},
+      {id:'final-favorite',difficulty:2,build(){const n=rnd(8,12),ans=V(n-1,2);return task({id:this.id,world:4,label:'Фиксиран победител',method:'variation',difficulty:2,text:`В турнир участват ${span(n)} отбора. Един отбор със сигурност печели златния медал. По колко начина могат да се разпределят сребърният и бронзовият медал?`,answer:ans,hint:'Златният медал е фиксиран. Изберете и подредете два отбора от останалите n - 1.',solution:`V<sub>${n-1}</sub><sup>2</sup> = ${ans}`,interaction:methodInteraction('variation',['permutation','variation','combination'])})}},
+      {id:'final-photos',difficulty:2,build(){const n=rnd(20,32),ans=n*(n-1);return task({id:this.id,world:4,label:'Насочени обмени',method:'variation',difficulty:2,text:`Всеки от ${span(n)} ученици дава по една своя снимка на всеки друг ученик. Колко снимки са раздадени общо?`,answer:ans,hint:'За всяка снимка има подател и различен получател. Размяната А към Б е различна от Б към А.',solution:`${n} · (${n}-1) = ${ans}`,interaction:methodInteraction('variation',['combination','variation','product'])})}},
+      {id:'final-two-matches',difficulty:2,build(){const n=rnd(10,16),ans=2*C(n,2);return task({id:this.id,world:4,label:'Двукратни срещи',method:'mixed',difficulty:2,text:`В първенство участват ${span(n)} отбора. Всеки два отбора играят по два мача помежду си. Колко мача ще се изиграят?`,answer:ans,hint:'Първо намерете двойките отбори, след това отчетете двата мача за всяка двойка.',solution:`2 · C<sub>${n}</sub><sup>2</sup> = 2 · ${C(n,2)} = ${ans}`,interaction:methodInteraction('mixed',['combination','product','mixed'])})}}
+    ]
+  };
+
+  function tone(freq=440,duration=.08,type='sine',volume=.04){
+    if(!state.sound) return;
+    try{const ctx=tone.ctx||(tone.ctx=new (window.AudioContext||window.webkitAudioContext)());const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=volume;o.connect(g);g.connect(ctx.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+duration);o.stop(ctx.currentTime+duration)}catch(e){}
+  }
+  function sfx(kind){if(kind==='click')tone(520,.05,'square',.025);if(kind==='good'){tone(660,.08,'sine',.05);setTimeout(()=>tone(880,.12,'sine',.05),85)}if(kind==='bad')tone(170,.18,'sawtooth',.05);if(kind==='chest')[440,620,820].forEach((f,i)=>setTimeout(()=>tone(f,.12,'triangle',.045),i*95));if(kind==='move'){tone(330,.05,'square',.02);setTimeout(()=>tone(480,.06,'square',.02),90)}}
+
+  function setTeamCount(count){state.teamCount=count;[...els.teamCountSelector.querySelectorAll('button')].forEach(b=>b.classList.toggle('active',Number(b.dataset.count)===count));els.teamConfigs.forEach((c,i)=>c.classList.toggle('hidden',i>=count))}
+  els.teamCountSelector.addEventListener('click',e=>{const b=e.target.closest('button');if(b)setTeamCount(Number(b.dataset.count))});
+  document.getElementById('startGameBtn').addEventListener('click',startGame);
+  document.getElementById('restartBtn').addEventListener('click',()=>location.reload());
+  document.getElementById('soundBtn').addEventListener('click',e=>{state.sound=!state.sound;e.currentTarget.textContent=state.sound?'🔊':'🔇';sfx('click')});
+  document.getElementById('rulesBtn').addEventListener('click',showRules);
+
+  function showRules(){
+    showModal(`<div style="font-size:3.2rem">🎮</div><h2>ПРАВИЛА НА МИСИЯТА</h2><p style="text-align:left"><strong>1.</strong> Отборите се редуват и активният отбор избира маршрут.<br><strong>2.</strong> Безопасният маршрут дава 1 позиция и 60 секунди; рисковият - 2 позиции, 45 секунди и гарантиран предмет.<br><strong>3.</strong> Преди числовия отговор изпълнете интерактивната част.<br><strong>4.</strong> След грешка следващият отбор може да прехване задачата за кристал.<br><strong>5.</strong> В Ядрото са необходими три успешни удара.</p><div class="modal-actions"><button class="primary-btn" id="closeRules">РАЗБРАХ</button></div>`);
+    document.getElementById('closeRules').onclick=closeModal;
+  }
+
+  function startGame(){
+    state.teams=[];
+    for(let i=0;i<state.teamCount;i++){
+      const cfg=els.teamConfigs[i],name=(cfg.querySelector('input').value.trim()||`ОТБОР ${i+1}`).toUpperCase(),avatar=AVATAR_MAP[cfg.querySelector('select').value]||'🤖';
+      state.teams.push({name,avatar,color:COLORS[i],position:0,score:0,crystals:0,inventory:{scanner:1,reroll:1,turbo:0,freeze:0,shield:0},finalDamage:0,finished:false,usedTaskIds:{0:[],1:[],2:[],3:[],4:[]}});
+    }
+    state.active=rnd(0,state.teams.length-1);state.phase='route';state.turnNumber=1;
+    els.setup.classList.add('hidden');els.game.classList.remove('hidden');buildTrack();renderAll();announceTurn();setTimeout(showRouteChoice,850);
+  }
+
+  function activeTeam(){return state.teams[state.active]}
+  function worldIndexFor(team=activeTeam()){return Math.min(4,Math.floor(team.position/3))}
+  function displayedWorld(){return state.currentTask&&state.phase==='task'?state.currentTask.world:worldIndexFor()}
+
+  function buildTrack(){
+    els.track.innerHTML='';
+    for(let i=0;i<=12;i++){const n=document.createElement('div');n.className='track-node';n.style.left=`${4+i*(92/12)}%`;if(i===12){n.style.width='24px';n.style.height='24px';n.style.background='#ffe164'}els.track.appendChild(n)}
+    state.teams.forEach((t,i)=>{const tok=document.createElement('div');tok.className='map-token';tok.id=`mapToken${i}`;tok.style.setProperty('--token-color',t.color);tok.textContent=t.avatar;els.track.appendChild(tok)});updateMapTokens();
+  }
+  function updateMapTokens(){state.teams.forEach((t,i)=>{const tok=document.getElementById(`mapToken${i}`);if(tok){tok.style.left=`${4+Math.min(12,t.position)*(92/12)}%`;tok.style.top=`${34+i*16}%`}})}
+  function renderHUD(){els.hud.innerHTML=state.teams.map((t,i)=>`<div class="team-hud ${i===state.active?'active':''}" style="--team-color:${t.color}"><div class="team-avatar">${t.avatar}</div><div><div class="team-name">${escapeHtml(t.name)}</div><div class="team-meta"><span>💎 ${t.crystals}</span><span>📍 ${Math.min(t.position,12)}/12</span>${t.position>=12?`<span>🛡️ ${3-t.finalDamage}</span>`:''}</div></div><div class="team-score">${t.score}</div></div>`).join('')}
+  function renderInventory(){const inv=activeTeam().inventory;els.inventoryRow.innerHTML=Object.entries(ITEMS).map(([key,item])=>`<button class="item-btn" data-item="${key}" ${inv[key]<=0||state.phase==='route'||state.locked?'disabled':''}><b>${item.icon} ×${inv[key]}</b>${item.name}</button>`).join('');els.inventoryRow.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>useItem(b.dataset.item)))}
+  function renderAll(){renderHUD();renderInventory();updateMapTokens();setScene(displayedWorld());els.turnTeam.textContent=`ХОД НА ${activeTeam().name}`;els.turnTeam.style.color=activeTeam().color;document.documentElement.style.setProperty('--team',activeTeam().color)}
+
+  function setScene(index){const w=WORLDS[index];els.scene.className=`scene ${w.key}`;els.worldTitle.textContent=w.title;els.sceneName.textContent=w.name;els.sceneStory.textContent=w.story;els.sceneDecor.innerHTML=decorFor(w.key)}
+  function decorFor(key){
+    const avatar=activeTeam()?.avatar||'🤖';
+    if(key==='city')return `<div class="skyline"></div><div class="road"></div><div class="city-beam"></div><div class="city-portal"></div><div class="mission-actor">${avatar}</div>`;
+    if(key==='underwater')return `<div class="lab"></div>${[8,19,33,51,68,84].map((x,i)=>`<div class="bubble" style="left:${x}%;animation-delay:${i*.8}s"></div>`).join('')}<div class="submarine">🛸</div><div class="lab-lock">🔒</div><div class="leak">💦</div>`;
+    if(key==='temple')return `<div class="temple-gate"></div><div class="torch t1">🔥</div><div class="torch t2">🔥</div><div class="temple-glyph">◈</div><div class="temple-runner">${avatar}</div><div class="rolling-stone">🪨</div>`;
+    if(key==='space')return `<div class="earth"></div><div class="target-satellite">🛰️</div><div class="space-ship">${avatar==='🚀'?'🚀':'🛸'}</div><div class="energy-shot"></div><div class="asteroid">☄️</div>`;
+    return '<div class="core-ring"></div>';
+  }
+  function playSceneEvent(kind){
+    clearTimeout(state.eventTimer);els.scene.classList.remove('good-event','bad-event');void els.scene.offsetWidth;els.scene.classList.add(kind==='good'?'good-event':'bad-event');
+    const key=WORLDS[displayedWorld()].key;
+    const text={city:{good:'Порталът се отключва и агентът преминава.',bad:'Охранителният лъч блокира маршрута.'},underwater:{good:'Шлюзът се отключва и подводният апарат достига лабораторията.',bad:'Грешният код предизвиква теч в лабораторията.'},temple:{good:'Символът светва и каменната врата се повдига.',bad:'Капанът се задейства - каменният блок преминава през залата.'},space:{good:'Енергийният импулс стабилизира орбиталната станция.',bad:'Астероидът преминава опасно близо до станцията.'},core:{good:'Защитата на Ядрото губи енергия.',bad:'Ядрото отхвърля неправилния код.'}};
+    els.sceneStory.textContent=text[key][kind];state.eventTimer=setTimeout(()=>{els.scene.classList.remove('good-event','bad-event');els.sceneStory.textContent=WORLDS[displayedWorld()].story},1700);
+  }
+
+  function announceTurn(custom=''){els.turnBanner.textContent=custom||`ХОД НА ${activeTeam().name}`;els.turnBanner.style.setProperty('--team',activeTeam().color);els.turnBanner.classList.remove('show');void els.turnBanner.offsetWidth;els.turnBanner.classList.add('show')}
+  function showRouteChoice(){clearTimer();state.phase='route';state.route=null;state.currentTask=null;state.locked=false;state.usedTurbo=false;renderAll();els.timer.textContent='--';const final=worldIndexFor()===4;els.missionText.textContent=final?'Изберете режим за атака срещу Ядрото.':'Изберете маршрут за този ход.';els.panelBody.innerHTML=`<div class="route-grid"><button class="route-card" data-route="safe"><div class="route-icon">🛡️</div><div class="route-title">${final?'СТАБИЛНА АТАКА':'БЕЗОПАСЕН МАРШРУТ'}</div><div class="route-text">Задача от основно или средно ниво, 60 секунди, ${final?'1 удар по защитата':'придвижване с 1 позиция'}.</div></button><button class="route-card risky" data-route="risky"><div class="route-icon">⚡</div><div class="route-title">${final?'КРИТИЧНА АТАКА':'РИСКОВ МАРШРУТ'}</div><div class="route-text">По-сложна задача, 45 секунди, ${final?'1 удар и гарантиран предмет':'придвижване с 2 позиции и гарантиран сандък'}.</div></button></div>`;els.panelBody.querySelectorAll('.route-card').forEach(b=>b.addEventListener('click',()=>chooseRoute(b.dataset.route)))}
+  function chooseRoute(route){state.route=route;state.phase='task';state.currentTask=generateTask(worldIndexFor(),route==='risky');sfx('click');renderAll();renderTask();startTimer(route==='risky'?45:60)}
+
+  function generateTask(world,risky=false){
+    const bank=TASK_BANK[world],pool=bank.filter(x=>risky?x.difficulty>=2:x.difficulty<=2),history=activeTeam().usedTaskIds[world];
+    let candidates=pool.filter(x=>!history.includes(x.id));
+    if(!candidates.length){const poolIds=new Set(pool.map(x=>x.id));activeTeam().usedTaskIds[world]=history.filter(id=>!poolIds.has(id));candidates=pool.slice()}
+    const factory=pick(candidates);activeTeam().usedTaskIds[world].push(factory.id);const result=factory.build();result.route=risky?'risky':'safe';return result;
+  }
+
+  function renderInteraction(t){
+    const i=t.interaction||{kind:'none'};
+    if(i.kind==='method')return `<div class="mini-title">Изберете математическия модел</div><div class="method-grid ${i.choices.length>3?'five':''}">${i.choices.map(value=>`<button class="choice-btn" data-action="${value}">${METHOD_LABELS[value]}</button>`).join('')}</div>`;
+    if(i.kind==='order'||i.kind==='select')return `<div class="mini-title">${escapeHtml(i.title)}</div><div class="tokens">${i.tokens.map((x,index)=>`<button class="token-btn" data-token="${index}">${escapeHtml(x)}</button>`).join('')}</div><div class="mini-title">${i.kind==='order'?'Избрана подредба':'Избрани елементи'}</div><div class="slots" id="slots"></div>`;
+    return '';
+  }
+  function renderTask(){const t=state.currentTask;els.missionText.textContent=state.intercept?'ПРЕХВАЩАНЕ: решете същата задача за кристал.':`${state.route==='risky'?'Рисков':'Безопасен'} маршрут · ${t.label}`;els.panelBody.innerHTML=`<div class="task-card" id="taskCard"><span class="task-type">${t.label}</span><span class="task-level">ниво ${t.difficulty}</span><div class="task-text">${t.text}</div>${renderInteraction(t)}<div class="answer-row"><input id="answerInput" type="number" min="0" step="1" placeholder="Отговор" autocomplete="off"><button class="primary-btn" id="submitBtn">АКТИВИРАЙ</button></div><div id="feedback"></div></div>`;bindTaskInteraction();renderInventory();updateSlots();setTimeout(()=>document.getElementById('answerInput')?.focus(),80)}
+  function bindTaskInteraction(){const t=state.currentTask;els.panelBody.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>{t.action=b.dataset.action;els.panelBody.querySelectorAll('[data-action]').forEach(x=>x.classList.toggle('selected',x===b));sfx('click')}));els.panelBody.querySelectorAll('[data-token]').forEach(b=>b.addEventListener('click',()=>toggleToken(b)));document.getElementById('submitBtn').addEventListener('click',submitAnswer);document.getElementById('answerInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitAnswer()})}
+  function toggleToken(btn){const t=state.currentTask,i=t.interaction,id=btn.dataset.token,idx=t.selected.indexOf(id);if(idx>=0){t.selected.splice(idx,1);btn.classList.remove('selected')}else if(t.selected.length<i.count){t.selected.push(id);btn.classList.add('selected');sfx('click')}updateSlots()}
+  function updateSlots(){const t=state.currentTask,i=t?.interaction,slots=document.getElementById('slots');if(!slots||!i||!['order','select'].includes(i.kind))return;slots.innerHTML=t.selected.map(id=>`<div class="slot">${escapeHtml(i.tokens[Number(id)])}</div>`).join('')+Array.from({length:Math.max(0,i.count-t.selected.length)},()=>'<div class="slot">?</div>').join('')}
+  function validateInteraction(){const t=state.currentTask,i=t.interaction||{kind:'none'};if(i.kind==='method'&&t.action!==i.correct)return 'Първо изберете правилния математически модел.';if(['order','select'].includes(i.kind)&&t.selected.length!==i.count)return 'Първо изпълнете интерактивната част на мисията.';if(i.correctSet){const selected=t.selected.map(id=>String(i.tokens[Number(id)])).sort(),correct=[...i.correctSet].map(String).sort();if(selected.join('|')!==correct.join('|'))return 'Избраните елементи не изпълняват условието на задачата.'}return ''}
+  function submitAnswer(){if(state.locked)return;const err=validateInteraction();if(err){showFeedback(err,'info');return}const input=document.getElementById('answerInput'),raw=input.value.trim(),ans=Number(raw);if(raw===''||!Number.isInteger(ans)||ans<0){showFeedback('Въведете цяло неотрицателно число.','info');return}state.locked=true;document.getElementById('submitBtn').disabled=true;clearTimer();if(ans===state.currentTask.answer)handleCorrect();else handleWrong()}
+
+  function handleCorrect(){sfx('good');playSceneEvent('good');showFeedback(`Кодът е верен!<div class="formula-line">${state.currentTask.solution}</div>`,'good');if(state.intercept){activeTeam().crystals++;activeTeam().score+=60;renderHUD();setTimeout(()=>finishIntercept(),1600);return}const team=activeTeam();let gain=state.route==='risky'?2:1;if(state.usedTurbo)gain++;const final=state.currentTask.world===4;team.score+=(state.route==='risky'?180:100)+Math.max(0,state.timeLeft*2);if(final){team.finalDamage+=state.usedTurbo?2:1;team.finalDamage=Math.min(3,team.finalDamage);coreHitEffect();renderHUD();if(team.finalDamage>=3){setTimeout(()=>showVictory(team),1700);return}}else{team.position=Math.min(12,team.position+gain);updateMapTokens();sfx('move')}const guaranteed=state.route==='risky';setTimeout(()=>{if(guaranteed||Math.random()<.34)showChest(()=>endTurn());else endTurn()},1800)}
+  function handleWrong(fromTimeout=false){sfx('bad');playSceneEvent('bad');document.body.insertAdjacentHTML('beforeend','<div class="damage-flash"></div>');setTimeout(()=>document.querySelector('.damage-flash')?.remove(),500);const team=activeTeam();let protectedByShield=false;if(team.inventory.shield>0){team.inventory.shield--;protectedByShield=true}else if(team.crystals>0){team.crystals--}showFeedback(`${fromTimeout?'Времето изтече.':'Кодът е грешен.'} ${protectedByShield?'Щитът пое наказанието. ':''}<br><strong>Подсказка:</strong> ${state.currentTask.hint}`,'bad');renderHUD();renderInventory();if(state.intercept){setTimeout(()=>finishIntercept(),1800);return}setTimeout(()=>offerIntercept(),1800)}
+  function offerIntercept(){const next=(state.active+1)%state.teams.length;showModal(`<div style="font-size:4rem">📡</div><h2>ВЪЗМОЖНОСТ ЗА ПРЕХВАЩАНЕ</h2><p>Отбор <strong style="color:${state.teams[next].color}">${escapeHtml(state.teams[next].name)}</strong> може да реши същата задача и да спечели кристал. Няма придвижване и няма наказание при грешка.</p><div class="modal-actions"><button class="primary-btn" id="acceptIntercept">ПРЕХВАНИ СИГНАЛА</button><button class="secondary-btn" id="skipIntercept">ПРОПУСНИ</button></div>`);document.getElementById('acceptIntercept').onclick=()=>startIntercept(next);document.getElementById('skipIntercept').onclick=()=>{closeModal();endTurn()}}
+  function startIntercept(next){closeModal();state.originalTeam=state.active;state.active=next;state.intercept=true;state.phase='task';state.locked=false;state.currentTask.selected=[];state.currentTask.action=null;renderAll();announceTurn(`ПРЕХВАЩАНЕ: ${activeTeam().name}`);renderTask();startTimer(25)}
+  function finishIntercept(){state.active=(state.originalTeam+1)%state.teams.length;state.intercept=false;state.originalTeam=null;state.turnNumber++;renderAll();announceTurn();setTimeout(showRouteChoice,850)}
+  function endTurn(){state.active=(state.active+1)%state.teams.length;state.turnNumber++;state.intercept=false;state.originalTeam=null;renderAll();announceTurn();setTimeout(showRouteChoice,850)}
+
+  function startTimer(sec){clearTimer();state.timeLeft=sec;updateTimer();state.timerId=setInterval(()=>{state.timeLeft--;updateTimer();if(state.timeLeft<=0){clearTimer();state.locked=true;handleWrong(true)}},1000)}
+  function updateTimer(){els.timer.textContent=`${state.timeLeft}s`;els.timer.classList.toggle('danger',state.timeLeft<=10)}
+  function clearTimer(){if(state.timerId){clearInterval(state.timerId);state.timerId=null}els.timer.classList.remove('danger')}
+  function showFeedback(html,type){const f=document.getElementById('feedback');if(f){f.className=`feedback ${type}`;f.innerHTML=html}}
+
+  function useItem(key){const team=activeTeam(),inv=team.inventory;if(inv[key]<=0||state.locked)return;if(key==='scanner'){inv[key]--;showFeedback(`<strong>Скенер:</strong> ${state.currentTask.hint}`,'info')}if(key==='reroll'){inv[key]--;state.currentTask=generateTask(state.currentTask.world,state.route==='risky');state.locked=false;renderAll();renderTask()}if(key==='turbo'){inv[key]--;state.usedTurbo=true;showFeedback(state.currentTask.world===4?'Турбо: при верен отговор нанасяте още един удар по Ядрото.':'Турбо: при верен отговор получавате още една позиция.','info')}if(key==='freeze'){inv[key]--;state.timeLeft+=20;updateTimer();showFeedback('Добавени са 20 секунди.','info')}if(key==='shield'){showFeedback('Щитът се активира автоматично при грешен отговор.','info');return}sfx('click');renderInventory();renderHUD()}
+  function showChest(callback){const possible=['scanner','reroll','turbo','freeze','shield'],key=pick(possible),item=ITEMS[key];activeTeam().inventory[key]++;sfx('chest');showModal(`<div class="chest">🧰</div><h2>ОТКРИТ Е САНДЪК</h2><p>Отборът получава: <strong style="color:var(--gold)">${item.icon} ${item.name}</strong><br>${item.desc}</p><div class="modal-actions"><button class="primary-btn" id="chestOk">ПРИБЕРИ ПРЕДМЕТА</button></div>`);document.getElementById('chestOk').onclick=()=>{closeModal();renderInventory();callback&&callback()}}
+  function coreHitEffect(){els.scene.classList.add('shake');setTimeout(()=>els.scene.classList.remove('shake'),500);sfx('move')}
+  function showVictory(team){clearTimer();confetti();showModal(`<div style="font-size:5rem">🏆</div><h2>${escapeHtml(team.name)} ВЪЗСТАНОВИ КОДА!</h2><p>Трите защити на Ядрото са разрушени. Разломът между световете се затваря.</p><div style="font-size:1.25rem;color:var(--gold);font-weight:950">Резултат: ${team.score} точки · ${team.crystals} кристала</div><div class="modal-actions"><button class="primary-btn" onclick="location.reload()">НОВА МИСИЯ</button></div>`)}
+  function showModal(html){els.modalCard.innerHTML=html;els.modal.classList.remove('hidden')}
+  function closeModal(){els.modal.classList.add('hidden');els.modalCard.innerHTML=''}
+  function confetti(){for(let i=0;i<120;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.background=`hsl(${Math.random()*360} 90% 60%)`;c.style.animationDelay=Math.random()*1.5+'s';c.style.animationDuration=2.4+Math.random()*2+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),5000)}}
+
+  setTeamCount(3);
+})();
+</script>
+</body>
+</html>

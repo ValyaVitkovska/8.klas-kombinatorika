@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Генератор на контролна работа – Комбинаторика</title>
+  <style>
+    :root{--navy:#172554;--blue:#2563eb;--paper:#f8fafc;--ink:#172033;--line:#cbd5e1}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#eef2ff;color:var(--ink)}
+    button,input,select{font:inherit}
+    .appbar{background:linear-gradient(135deg,#172554,#1e3a8a);color:#fff;padding:18px 0}
+    .shell{width:min(1180px,calc(100% - 32px));margin:auto}
+    .appbar .shell{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .back{color:#dbeafe;text-decoration:none;font-weight:800}.back:hover{text-decoration:underline}
+    h1{margin:4px 0 0;font-size:clamp(1.45rem,4vw,2.2rem)}
+    .layout{display:grid;grid-template-columns:360px 1fr;gap:24px;padding:28px 0 60px;align-items:start}
+    .panel{background:#fff;border:1px solid #dbeafe;border-radius:22px;padding:22px;box-shadow:0 14px 38px rgba(30,64,175,.1)}
+    .settings{position:sticky;top:18px}
+    .settings h2{margin:0 0 18px;color:var(--navy)}
+    .field{margin-bottom:17px}.field>label,.field>span{display:block;font-weight:850;margin-bottom:7px;color:#334155}
+    input[type=text],input[type=number],select{width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:10px 12px;background:#fff;color:#0f172a}
+    input:focus,select:focus{outline:3px solid #bfdbfe;border-color:#3b82f6}
+    .checks{display:grid;gap:7px}.check{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+    .check input{width:18px;height:18px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btn{border:0;border-radius:12px;padding:12px 15px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .btn-primary{width:100%;color:#fff;background:linear-gradient(135deg,#2563eb,#0891b2);box-shadow:0 10px 22px rgba(37,99,235,.25)}
+    .btn-light{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+    .btn-amber{background:#f59e0b;color:#fff}
+    .btn,.global-home{
+      box-shadow:0 5px 0 rgba(15,23,42,.28),0 10px 20px rgba(15,23,42,.16);
+      translate:0 0;transition:translate .14s ease,box-shadow .14s ease,filter .14s ease
+    }
+    .btn:not(:disabled):hover,.global-home:hover{translate:0 -2px;filter:brightness(1.04)}
+    .btn:not(:disabled):active,.global-home:active{translate:0 4px;box-shadow:0 1px 0 rgba(15,23,42,.3),0 4px 8px rgba(15,23,42,.12)}
+    .global-home{
+      position:fixed;left:14px;bottom:14px;z-index:2147483647;padding:10px 15px;border-radius:999px;
+      background:rgba(255,255,255,.96);color:#1e3a8a;border:1px solid #bfdbfe;
+      text-decoration:none;font:800 14px/1.2 system-ui,sans-serif;backdrop-filter:blur(8px)
+    }
+    .app-brand{display:flex;align-items:center;gap:10px;font-weight:850}.app-brand img{width:38px;height:38px;object-fit:contain;opacity:.82}
+    .actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+    .intro{padding:28px;text-align:center;color:#64748b}.intro .big{font-size:4rem}
+    .variant-page,.answer-key{background:#fff;border:1px solid #dbeafe;border-radius:18px;padding:34px 42px;margin-bottom:20px;box-shadow:0 12px 32px rgba(30,64,175,.08)}
+    .paper-head{display:grid;grid-template-columns:1fr auto;gap:20px;border-bottom:2px solid #172554;padding-bottom:14px;margin-bottom:18px}
+    .paper-head h2{margin:0;color:#172554;font-size:1.45rem}.paper-meta{font-size:.9rem;color:#475569;margin-top:5px}
+    .variant-badge{border:2px solid #172554;padding:8px 14px;font-weight:950;align-self:start}
+    .student-line{display:grid;grid-template-columns:1fr 180px;gap:18px;margin:18px 0 24px;font-size:.92rem}
+    .line{border-bottom:1px solid #64748b;min-height:24px}
+    .task{display:grid;grid-template-columns:30px 1fr auto;gap:10px;margin:0 0 20px;break-inside:avoid}
+    .task-no{font-weight:950;color:#1d4ed8}.task-text{line-height:1.5}.points{font-size:.8rem;white-space:nowrap;color:#64748b}
+    .work-lines{height:44px;background:repeating-linear-gradient(180deg,transparent 0 21px,#e2e8f0 21px 22px);margin-top:7px}
+    .paper-foot{border-top:1px solid #cbd5e1;padding-top:12px;display:flex;justify-content:space-between;font-weight:850}
+    .key-table{width:100%;border-collapse:collapse;margin-top:18px}.key-table th,.key-table td{border:1px solid #cbd5e1;padding:9px;text-align:left;vertical-align:top}.key-table th{background:#eff6ff}
+    .scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:18px}.scale div{border:1px solid #cbd5e1;border-radius:9px;padding:8px;text-align:center;font-size:.85rem}
+    .empty-warning{color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:10px;border-radius:10px;display:none;margin-bottom:12px}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.settings{position:static}.variant-page,.answer-key{padding:24px}.student-line{grid-template-columns:1fr}}
+    @media print{
+      @page{size:A4;margin:14mm}
+      body{background:#fff;font-family:"Times New Roman",serif}
+      .appbar,.settings,.screen-actions,.intro,.global-home{display:none!important}
+      .layout,.shell{display:block;width:auto;padding:0;margin:0}
+      .panel{border:0;box-shadow:none;padding:0}
+      .variant-page,.answer-key{border:0;box-shadow:none;border-radius:0;padding:0;margin:0;page-break-after:always}
+      body[data-print-mode="students"] .answer-key{display:none!important}
+      .task{margin-bottom:16px}.work-lines{height:48px}
+      .key-table th{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    }
+  </style>
+</head>
+<body>
+  <a href="../index.html" aria-label="Към началната страница" class="global-home">⌂ Начало</a>
+  <header class="appbar"><div class="shell"><div><h1>Генератор на контролна работа</h1></div><div class="app-brand"><img src="../assets/brand-mark.png" alt="Знак на автора"><span>📝 Режим за учителя</span></div></div></header>
+  <main class="shell layout">
+    <aside class="panel settings">
+      <h2>Настройки</h2>
+      <div class="field"><label for="test-title">Заглавие</label><input id="test-title" type="text" value="Контролна работа по комбинаторика"></div>
+      <div class="grid2">
+        <div class="field"><label for="class-name">Клас</label><input id="class-name" type="text" value="8. клас"></div>
+        <div class="field"><label for="test-date">Дата</label><input id="test-date" type="text" placeholder="………………"></div>
+      </div>
+      <div class="field"><span>Включени модели</span><div class="checks">
+        <label class="check"><input type="checkbox" name="model" value="add" checked>Правило за събиране</label>
+        <label class="check"><input type="checkbox" name="model" value="mul" checked>Правило за умножение</label>
+        <label class="check"><input type="checkbox" name="model" value="perm" checked>Пермутации</label>
+        <label class="check"><input type="checkbox" name="model" value="var" checked>Вариации</label>
+        <label class="check"><input type="checkbox" name="model" value="comb" checked>Комбинации</label>
+      </div></div>
+      <div class="grid2">
+        <div class="field"><label for="difficulty">Трудност</label><select id="difficulty"><option value="mixed">Смесена</option><option value="easy">Лесна</option><option value="medium">Средна</option><option value="hard">Трудна</option></select></div>
+        <div class="field"><label for="task-count">Брой задачи</label><select id="task-count"><option>5</option><option selected>8</option><option>10</option><option>12</option><option>15</option></select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="variant-count">Варианти</label><select id="variant-count"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
+        <div class="field"><label for="seed">Код на генерацията</label><input id="seed" type="number" value="2026" min="1"></div>
+      </div>
+      <div id="warning" class="empty-warning">Изберете поне един комбинаторен модел.</div>
+      <button class="btn btn-primary" id="generate">✨ Генерирай контролна работа</button>
+    </aside>
+    <section class="panel">
+      <div class="screen-actions actions" id="screen-actions" hidden>
+        <button class="btn btn-light" id="regenerate">↻ Нови числови данни</button>
+        <button class="btn btn-light" id="print-students">🖨 Само варианти</button>
+        <button class="btn btn-amber" id="print-all">🖨 Варианти и ключ</button>
+      </div>
+      <div id="output"><div class="intro"><div class="big">📝</div><h2>Подгответе контролна работа</h2><p>Изберете модели, трудност и брой варианти. Генераторът ще създаде сравними задачи с различни числови данни и отделен ключ.</p></div></div>
+    </section>
+  </main>
+  <script>
+    const fact=n=>n<=1?1:n*fact(n-1);
+    const C=(n,k)=>fact(n)/(fact(k)*fact(n-k));
+    const V=(n,k)=>fact(n)/fact(n-k);
+    const modelNames={add:'Правило за събиране',mul:'Правило за умножение',perm:'Пермутация',var:'Вариация',comb:'Комбинация'};
+    const diffPoints={easy:2,medium:3,hard:4};
+    const letters=['А','Б','В','Г'];
+    const rngFrom=seed=>{let s=(Number(seed)||1)>>>0;return()=>((s=Math.imul(1664525,s)+1013904223>>>0)/4294967296)};
+    const rint=(rng,min,max)=>Math.floor(rng()*(max-min+1))+min;
+    const choose=(rng,arr)=>arr[Math.floor(rng()*arr.length)];
+
+    const bank=[
+      {id:'add-e1',model:'add',diff:'easy',make:r=>{const n=rint(r,3,8),k=rint(r,2,7),ans=n+k;return{text:`В училищния бюфет се предлагат ${n} вида сандвичи и ${k} вида плодове. Ученикът избира точно един продукт — сандвич или плод. Колко различни избора има?`,ans,expr:`${n} + ${k} = ${ans}`,note:'Двата случая са алтернативни.'}}},
+      {id:'add-m1',model:'add',diff:'medium',make:r=>{const n=rint(r,9,18),k=rint(r,8,16),ans=n+k;return{text:`На изпит се изтегля точно един въпрос измежду ${n} въпроса по алгебра и ${k} въпроса по геометрия. Колко различни въпроса може да бъдат изтеглени?`,ans,expr:`${n} + ${k} = ${ans}`,note:'Прилага се правилото за събиране.'}}},
+      {id:'add-h1',model:'add',diff:'hard',make:r=>{const n=rint(r,6,10),k=rint(r,6,10),ans=C(n,2)+C(k,2);return{text:`От ${n} момчета и ${k} момичета се избира екип от двама ученици от един и същи пол. По колко начина може да се избере екипът?`,ans,expr:`C(${n},2) + C(${k},2) = ${ans}`,note:'Събират се два взаимно изключващи се случая.'}}},
+      {id:'mul-e1',model:'mul',diff:'easy',make:r=>{const n=rint(r,3,7),k=rint(r,2,6),ans=n*k;return{text:`Мила разполага с ${n} различни блузи и ${k} различни поли. По колко начина може да избере тоалет от една блуза и една пола?`,ans,expr:`${n} · ${k} = ${ans}`,note:'Изборът се извършва на две последователни стъпки.'}}},
+      {id:'mul-m1',model:'mul',diff:'medium',make:r=>{const n=rint(r,3,7),k=rint(r,4,9),ans=n*n*k*k*k;return{text:`Код се състои последователно от две букви и три цифри. За всяка буквена позиция са допустими ${n} букви, а за всяка цифрова позиция — ${k} цифри. Повторенията са разрешени. Колко различни кода могат да се образуват?`,ans,expr:`${n}² · ${k}³ = ${ans}`,note:'Изборите за петте позиции са независими.'}}},
+      {id:'mul-h1',model:'mul',diff:'hard',make:r=>{const n=rint(r,6,8),k=rint(r,2,3),ans=fact(n-k+1)*fact(k);return{text:`На рафт се подреждат ${n} различни книги. По колко начина могат да бъдат подредени, ако ${k} определени книги трябва да бъдат една до друга?`,ans,expr:`(${n}-${k}+1)! · ${k}! = ${ans}`,note:'Определените книги се разглеждат като един блок.'}}},
+      {id:'perm-e1',model:'perm',diff:'easy',make:r=>{const n=rint(r,4,7),ans=fact(n);return{text:`По колко начина могат да се подредят ${n} различни книги една до друга на рафт?`,ans,expr:`${n}! = ${ans}`,note:'Подреждат се всички различни обекти.'}}},
+      {id:'perm-m1',model:'perm',diff:'medium',make:r=>{const n=rint(r,6,9),ans=fact(n-1);return{text:`В редица се подреждат ${n} ученици. Колко подредби са възможни, ако един определен ученик трябва да бъде на първо място?`,ans,expr:`(${n}-1)! = ${ans}`,note:'Първата позиция е фиксирана.'}}},
+      {id:'perm-h1',model:'perm',diff:'hard',make:r=>{const n=rint(r,5,8),ans=fact(n-1);return{text:`${n} души сядат около кръгла маса. Подредби, получени само чрез завъртане, се смятат за еднакви. Колко различни подредби има?`,ans,expr:`(${n}-1)! = ${ans}`,note:'Използва се кръгова пермутация.'}}},
+      {id:'var-e1',model:'var',diff:'easy',make:r=>{const n=rint(r,6,10),ans=V(n,2);return{text:`От ${n} ученици се избират председател и заместник-председател. Един ученик не може да заема и двете длъжности. По колко начина може да стане изборът?`,ans,expr:`V(${n},2) = ${ans}`,note:'Длъжностите са различни, затова редът има значение.'}}},
+      {id:'var-m1',model:'var',diff:'medium',make:r=>{const n=rint(r,8,12),k=rint(r,3,5),ans=V(n,k);return{text:`В състезание участват ${n} финалисти. По колко начина могат да бъдат заети първите ${k} места, ако няма равни резултати?`,ans,expr:`V(${n},${k}) = ${ans}`,note:'Избират се и се подреждат част от участниците.'}}},
+      {id:'var-h1',model:'var',diff:'hard',make:r=>{const n=rint(r,6,9),ans=n*n*(n-1)*(n-2);return{text:`С цифрите от 0 до ${n} се образуват четирицифрени числа без повторение на цифра. Колко такива числа има?`,ans,expr:`${n} · ${n} · ${n-1} · ${n-2} = ${ans}`,note:'Първата цифра не може да бъде 0.'}}},
+      {id:'comb-e1',model:'comb',diff:'easy',make:r=>{const n=rint(r,7,11),k=rint(r,2,4),ans=C(n,k);return{text:`От ${n} ученици се избира екип от ${k} ученици. По колко начина може да бъде съставен екипът?`,ans,expr:`C(${n},${k}) = ${ans}`,note:'Редът на учениците в екипа няма значение.'}}},
+      {id:'comb-m1',model:'comb',diff:'medium',make:r=>{const n=rint(r,8,14),ans=C(n,2);return{text:`Дадени са ${n} точки, никои три от които не лежат на една права. Колко различни отсечки се определят от тях?`,ans,expr:`C(${n},2) = ${ans}`,note:'Всяка отсечка се определя от двойка точки.'}}},
+      {id:'comb-h1',model:'comb',diff:'hard',make:r=>{const n=rint(r,7,11),ans=C(n,4);return{text:`В изпъкнал ${n}-ъгълник са прекарани всички диагонали. Никои три диагонала не се пресичат в една вътрешна точка. Колко вътрешни пресечни точки се получават?`,ans,expr:`C(${n},4) = ${ans}`,note:'Всяка пресечна точка се определя от четири върха.'}}},
+      {id:'comb-h2',model:'comb',diff:'hard',make:r=>{const n=rint(r,9,15),ans=C(n,2)-n;return{text:`Намерете броя на диагоналите на изпъкнал ${n}-ъгълник.`,ans,expr:`C(${n},2) - ${n} = ${ans}`,note:'От всички отсечки между върхове се изключват страните.'}}}
+    ];
+
+    function difficultyFor(index,count,selected){
+      if(selected!=='mixed')return selected;
+      const ratio=(index+.5)/count;
+      return ratio<.34?'easy':ratio<.72?'medium':'hard';
+    }
+    function selectBlueprints(models,difficulty,count,rng){
+      const result=[];
+      for(let i=0;i<count;i++){
+        const diff=difficultyFor(i,count,difficulty);
+        let candidates=bank.filter(x=>models.includes(x.model)&&x.diff===diff);
+        if(!candidates.length)candidates=bank.filter(x=>models.includes(x.model));
+        const leastUsed=Math.min(...models.map(model=>result.filter(x=>x.model===model).length));
+        const balanced=candidates.filter(x=>result.filter(y=>y.model===x.model).length===leastUsed);
+        result.push(choose(rng,balanced.length?balanced:candidates));
+      }
+      return result;
+    }
+    const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function gradingScale(total){
+      const min=p=>Math.ceil(total*p);
+      return [
+        ['Слаб 2',`0–${min(.40)-1} т.`],
+        ['Среден 3',`${min(.40)}–${min(.55)-1} т.`],
+        ['Добър 4',`${min(.55)}–${min(.70)-1} т.`],
+        ['Мн. добър 5',`${min(.70)}–${min(.85)-1} т.`],
+        ['Отличен 6',`${min(.85)}–${total} т.`]
+      ];
+    }
+    function build(){
+      const models=[...document.querySelectorAll('input[name=model]:checked')].map(x=>x.value);
+      const warning=document.getElementById('warning');
+      if(!models.length){warning.style.display='block';return}
+      warning.style.display='none';
+      const count=Number(document.getElementById('task-count').value);
+      const variantCount=Number(document.getElementById('variant-count').value);
+      const difficulty=document.getElementById('difficulty').value;
+      const baseSeed=Number(document.getElementById('seed').value)||2026;
+      const title=document.getElementById('test-title').value.trim()||'Контролна работа по комбинаторика';
+      const className=document.getElementById('class-name').value.trim()||'8. клас';
+      const date=document.getElementById('test-date').value.trim()||'………………';
+      const blueprintRng=rngFrom(baseSeed);
+      const blueprints=selectBlueprints(models,difficulty,count,blueprintRng);
+      let html='';
+      const keys=[];
+      const usedTaskTexts=Array.from({length:count},()=>new Set());
+      for(let v=0;v<variantCount;v++){
+        const rng=rngFrom(baseSeed+(v+1)*7919);
+        const tasks=blueprints.map((spec,index)=>{
+          let generated,attempts=0;
+          do{generated=spec.make(rng);attempts++}while(usedTaskTexts[index].has(generated.text)&&attempts<24);
+          usedTaskTexts[index].add(generated.text);
+          return {...generated,model:spec.model,diff:spec.diff,points:diffPoints[spec.diff]};
+        });
+        const total=tasks.reduce((sum,t)=>sum+t.points,0);
+        keys.push({letter:letters[v],tasks,total});
+        html+=`<article class="variant-page"><div class="paper-head"><div><h2>${esc(title)}</h2><div class="paper-meta">${esc(className)} · Дата: ${esc(date)}</div></div><div class="variant-badge">Вариант ${letters[v]}</div></div>
+          <div class="student-line"><div>Име: <div class="line"></div></div><div>Клас №: <div class="line"></div></div></div>
+          ${tasks.map((t,i)=>`<div class="task"><div class="task-no">${i+1}.</div><div><div class="task-text">${esc(t.text)}</div><div class="work-lines"></div></div><div class="points">${t.points} т.</div></div>`).join('')}
+          <div class="paper-foot"><span>Общ брой точки: ${total}</span><span>Резултат: ………… / ${total} т.</span></div></article>`;
+      }
+      keys.forEach(key=>{
+        html+=`<article class="answer-key"><div class="paper-head"><div><h2>Ключ и указания за оценяване</h2><div class="paper-meta">${esc(title)} · ${esc(className)}</div></div><div class="variant-badge">Вариант ${key.letter}</div></div>
+          <table class="key-table"><thead><tr><th>№</th><th>Модел</th><th>Израз и отговор</th><th>Методическа бележка</th><th>Точки</th></tr></thead><tbody>
+          ${key.tasks.map((t,i)=>`<tr><td>${i+1}</td><td>${modelNames[t.model]}</td><td><strong>${esc(t.expr)}</strong></td><td>${esc(t.note)}</td><td>${t.points}</td></tr>`).join('')}
+          </tbody></table><h3>Предложена скала</h3><div class="scale">${gradingScale(key.total).map(x=>`<div><strong>${x[0]}</strong><br>${x[1]}</div>`).join('')}</div></article>`;
+      });
+      document.getElementById('output').innerHTML=html;
+      document.getElementById('screen-actions').hidden=false;
+      localStorage.setItem('combinatorics-last-test',JSON.stringify({models,count,variantCount,difficulty,baseSeed,title,className,date}));
+    }
+    document.getElementById('generate').addEventListener('click',build);
+    document.getElementById('regenerate').addEventListener('click',()=>{document.getElementById('seed').value=Number(document.getElementById('seed').value||2026)+1;build()});
+    document.getElementById('print-students').addEventListener('click',()=>{document.body.dataset.printMode='students';window.print()});
+    document.getElementById('print-all').addEventListener('click',()=>{document.body.dataset.printMode='all';window.print()});
+    try{
+      const saved=JSON.parse(localStorage.getItem('combinatorics-last-test')||'null');
+      if(saved){
+        document.getElementById('test-title').value=saved.title||'Контролна работа по комбинаторика';
+        document.getElementById('class-name').value=saved.className||'8. клас';
+        document.getElementById('test-date').value=saved.date||'';
+        document.getElementById('task-count').value=String(saved.count||8);
+        document.getElementById('variant-count').value=String(saved.variantCount||2);
+        document.getElementById('difficulty').value=saved.difficulty||'mixed';
+        document.getElementById('seed').value=saved.baseSeed||2026;
+        document.querySelectorAll('input[name=model]').forEach(x=>x.checked=(saved.models||[]).includes(x.value));
+      }
+    }catch{}
+  </script>
+</body>
+</html>

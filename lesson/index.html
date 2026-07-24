@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивен Урок - Комбинаторика</title>
+    
+    <!-- Зареждане на TailwindCSS за стиловете -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Зареждане на React и ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Зареждане на Babel за компилиране на JSX в браузъра -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Зареждане на KaTeX за математически формули като в учебник -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.8); } 70% { transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+        
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
+        .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        button, .global-home {
+            box-shadow: 0 5px 0 rgba(15, 23, 42, .24), 0 10px 20px rgba(15, 23, 42, .14) !important;
+            translate: 0 0;
+            transition: translate .14s ease, box-shadow .14s ease, filter .14s ease, background-color .14s ease !important;
+        }
+        button:not(:disabled):hover, .global-home:hover { translate: 0 -2px; filter: brightness(1.035); }
+        button:not(:disabled):active, .global-home:active {
+            translate: 0 4px;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, .28), 0 4px 8px rgba(15, 23, 42, .12) !important;
+        }
+        button:disabled { box-shadow: 0 3px 0 rgba(148, 163, 184, .26) !important; }
+        .global-home {
+            position: fixed; left: 14px; top: 14px; z-index: 2147483647;
+            padding: 10px 15px; border-radius: 999px; background: rgba(15, 23, 42, .94);
+            color: #fff; text-decoration: none; font: 800 14px/1.2 system-ui, sans-serif;
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-gray-800 selection:bg-blue-200">
+    <a href="../index.html" aria-label="Към началната страница" class="global-home">⌂ Начало</a>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- КОМПОНЕНТ ЗА МАТЕМАТИЧЕСКИ ФОРМУЛИ ---
+        const MathFormula = ({ tex, display = false }) => {
+            const html = katex.renderToString(tex, { 
+                throwOnError: false, 
+                displayMode: display 
+            });
+            return <span dangerouslySetInnerHTML={{ __html: html }} className={display ? "my-2 block" : ""} />;
+        };
+
+        // --- ИКОНИ (Вградени) ---
+        const CheckCircle = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        );
+        const ArrowRight = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        );
+        const RefreshCw = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        );
+        const Trophy = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+        );
+        const AlertCircle = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        );
+
+        // --- ЛОГА И НАЧАЛНА ИЛЮСТРАЦИЯ ---
+        const LargeLogo = () => (
+          <div className="absolute bottom-5 right-5 md:bottom-7 md:right-7 z-20 animate-fade-in opacity-75">
+            <img src="../assets/brand-mark.png" alt="Знак на автора" className="h-12 sm:h-14 w-auto object-contain" />
+          </div>
+        );
+
+        const SmallLogo = () => (
+          <img
+            src="../assets/brand-mark.png"
+            alt="Знак на автора"
+            className="fixed bottom-4 right-4 z-40 h-12 sm:h-14 w-auto opacity-70 drop-shadow-md"
+          />
+        );
+
+        const HeroIllustration = () => (
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-blue-800 to-cyan-600 shadow-2xl border border-white/20">
+            <svg viewBox="0 0 1200 430" className="w-full h-auto block" role="img" aria-label="Комбинаторика – подреждане, избор и групиране">
+              <defs>
+                <linearGradient id="heroGlow" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.32" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
+                </linearGradient>
+                <filter id="softShadow">
+                  <feDropShadow dx="0" dy="10" stdDeviation="12" floodOpacity="0.24" />
+                </filter>
+              </defs>
+              <circle cx="1050" cy="70" r="150" fill="#ffffff" opacity="0.08" />
+              <circle cx="90" cy="370" r="170" fill="#67e8f9" opacity="0.10" />
+              <path d="M0 330 C250 245 410 430 650 315 C850 220 1000 300 1200 215 L1200 430 L0 430 Z" fill="#ffffff" opacity="0.07" />
+
+              <g filter="url(#softShadow)">
+                <rect x="90" y="75" width="265" height="265" rx="34" fill="url(#heroGlow)" stroke="#ffffff" strokeOpacity="0.35" />
+                <text x="222" y="125" textAnchor="middle" fill="#ffffff" fontSize="25" fontWeight="700">ПОДРЕЖДАМЕ</text>
+                <g fontSize="70">
+                  <text x="125" y="225">🍎</text><text x="205" y="225">🍓</text><text x="285" y="225">🍇</text>
+                </g>
+                <path d="M135 270 H310" stroke="#a5f3fc" strokeWidth="8" strokeLinecap="round" />
+                <path d="M280 250 L315 270 L280 290" fill="none" stroke="#a5f3fc" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+              </g>
+
+              <g filter="url(#softShadow)">
+                <rect x="465" y="75" width="265" height="265" rx="34" fill="url(#heroGlow)" stroke="#ffffff" strokeOpacity="0.35" />
+                <text x="597" y="125" textAnchor="middle" fill="#ffffff" fontSize="25" fontWeight="700">ИЗБИРАМЕ И РЕДИМ</text>
+                <g fontSize="66">
+                  <text x="500" y="220">🚗</text><text x="575" y="220">🚕</text><text x="650" y="220">🚙</text>
+                </g>
+                <rect x="505" y="265" width="75" height="48" rx="10" fill="#ffffff" opacity="0.92" />
+                <rect x="615" y="265" width="75" height="48" rx="10" fill="#ffffff" opacity="0.92" />
+                <text x="543" y="298" textAnchor="middle" fill="#1e3a8a" fontSize="23" fontWeight="800">1</text>
+                <text x="653" y="298" textAnchor="middle" fill="#1e3a8a" fontSize="23" fontWeight="800">2</text>
+              </g>
+
+              <g filter="url(#softShadow)">
+                <rect x="840" y="75" width="265" height="265" rx="34" fill="url(#heroGlow)" stroke="#ffffff" strokeOpacity="0.35" />
+                <text x="972" y="125" textAnchor="middle" fill="#ffffff" fontSize="25" fontWeight="700">ИЗБИРАМЕ ГРУПА</text>
+                <ellipse cx="972" cy="255" rx="95" ry="67" fill="#ffffff" opacity="0.92" />
+                <g fontSize="66"><text x="900" y="278">⚽</text><text x="970" y="278">🏀</text></g>
+                <text x="972" y="325" textAnchor="middle" fill="#ede9fe" fontSize="20" fontWeight="700">редът няма значение</text>
+              </g>
+            </svg>
+          </div>
+        );
+
+        // --- КОМПОНЕНТ: НАЧАЛНА СТРАНИЦА (УИДЖЕТ) ---
+        const HomePage = ({ onStart }) => {
+          const shirts = ['👕', '👚', '🧥'];
+          const pants = ['👖', '🩳'];
+          const [selectedShirt, setSelectedShirt] = useState(null);
+          const [selectedPants, setSelectedPants] = useState(null);
+          const [outfits, setOutfits] = useState([]);
+
+          useEffect(() => {
+            if (selectedShirt && selectedPants) {
+              const outfitStr = selectedShirt + selectedPants;
+              
+              setOutfits(prevOutfits => {
+                if (!prevOutfits.includes(outfitStr)) {
+                  return [...prevOutfits, outfitStr];
+                }
+                return prevOutfits;
+              });
+
+              const timer = setTimeout(() => {
+                setSelectedShirt(null);
+                setSelectedPants(null);
+              }, 600);
+              
+              return () => clearTimeout(timer);
+            }
+          }, [selectedShirt, selectedPants]);
+
+          return (
+            <div className="min-h-screen px-4 py-6 md:py-10 animate-fade-in">
+              <div className="max-w-6xl mx-auto relative pb-32 md:pb-36">
+                <HeroIllustration />
+
+                <section className="bg-white -mt-5 md:-mt-8 relative z-10 mx-2 md:mx-8 p-6 md:p-9 rounded-3xl shadow-xl border border-gray-100 text-center">
+                  <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-800 px-4 py-1.5 text-sm font-bold mb-4">
+                    Интерактивен урок за 8. клас
+                  </span>
+                  <h1 className="text-3xl md:text-5xl font-extrabold text-blue-950 mb-4 tracking-tight">
+                    Пермутации, вариации и комбинации
+                  </h1>
+                  <p className="text-gray-600 mb-5 text-lg md:text-xl leading-relaxed max-w-4xl mx-auto">
+                    В този урок ще откриете как систематично да преброявате възможностите, когато
+                    <strong> подреждате всички елементи</strong>, <strong>избирате част от тях и редът има значение</strong>
+                    или <strong>съставяте група, при която редът няма значение</strong>.
+                  </p>
+                  <div className="grid sm:grid-cols-3 gap-3 max-w-4xl mx-auto mb-8 text-left">
+                    <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
+                      <div className="font-extrabold text-blue-800 mb-1">1. Пермутации</div>
+                      <div className="text-sm text-gray-600">Подреждаме всички дадени елементи.</div>
+                    </div>
+                    <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+                      <div className="font-extrabold text-emerald-800 mb-1">2. Вариации</div>
+                      <div className="text-sm text-gray-600">Избираме и подреждаме част от елементите.</div>
+                    </div>
+                    <div className="rounded-2xl bg-purple-50 border border-purple-100 p-4">
+                      <div className="font-extrabold text-purple-800 mb-1">3. Комбинации</div>
+                      <div className="text-sm text-gray-600">Избираме група, без да отчитаме реда.</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 p-6 rounded-2xl mb-8 relative overflow-hidden max-w-3xl mx-auto">
+
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Trophy size={100} />
+                  </div>
+                  <h3 className="font-bold text-xl text-blue-800 mb-4">Въведение: Създай тоалет</h3>
+                  <p className="text-sm text-blue-600 mb-4">
+                    Разполагаш с 3 горни дрехи и 2 долни. Избери по една от всяка, за да създадеш тоалет. 
+                    Колко различни тоалета можеш да направиш?
+                  </p>
+
+                  <div className="flex flex-col md:flex-row gap-6 justify-center items-center mb-6 z-10 relative">
+                    <div className="flex gap-2 bg-white p-3 rounded-xl shadow-sm">
+                      {shirts.map(shirt => (
+                        <button 
+                          key={shirt} 
+                          onClick={() => setSelectedShirt(shirt)}
+                          className={`text-4xl p-2 rounded-lg transition-all ${selectedShirt === shirt ? 'bg-blue-200 scale-110' : 'hover:bg-gray-100'}`}
+                        >
+                          {shirt}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-2xl font-bold text-blue-300">+</span>
+                    <div className="flex gap-2 bg-white p-3 rounded-xl shadow-sm">
+                      {pants.map(pant => (
+                        <button 
+                          key={pant} 
+                          onClick={() => setSelectedPants(pant)}
+                          className={`text-4xl p-2 rounded-lg transition-all ${selectedPants === pant ? 'bg-blue-200 scale-110' : 'hover:bg-gray-100'}`}
+                        >
+                          {pant}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white/60 p-4 rounded-xl text-left border border-white">
+                    <div className="text-sm font-bold text-blue-800 mb-2">
+                      Открити комбинации: {outfits.length} / 6
+                    </div>
+                    <div className="flex flex-wrap gap-2 min-h-[48px]">
+                      {outfits.map((outfit, idx) => (
+                        <div key={idx} className="bg-white px-3 py-1 rounded-full shadow-sm text-2xl animate-pop-in">
+                          {outfit}
+                        </div>
+                      ))}
+                      {outfits.length === 0 && <span className="text-gray-400 italic flex items-center h-full">Все още няма избрани...</span>}
+                    </div>
+                  </div>
+                  
+                  {outfits.length === 6 && (
+                    <div className="mt-4 text-green-600 font-bold animate-bounce text-lg bg-green-100 p-2 rounded-lg">
+                      Точно така! <MathFormula tex="3 \cdot 2 = 6" />. Това е основното правило за умножение!
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={onStart}
+                  className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-blue-600 font-pj rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 text-lg shadow-lg hover:shadow-xl hover:-translate-y-1"
+                >
+                  Започни Урока
+                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </button>
+                </section>
+
+                <LargeLogo />
+              </div>
+            </div>
+          );
+        };
+
+        const PermutationsLab = ({ onComplete }) => {
+          const allItems = ['🍎', '🍓', '🍇'];
+          const [availableItems, setAvailableItems] = useState(allItems);
+          const [currentSelection, setCurrentSelection] = useState([]);
+          const [foundSets, setFoundSets] = useState([]);
+          const [message, setMessage] = useState('');
+          
+          const targetCount = 6; 
+          const isSolved = foundSets.length === targetCount;
+
+          const selectItem = (item) => {
+            if (currentSelection.length < 3) {
+              setCurrentSelection([...currentSelection, item]);
+              setAvailableItems(availableItems.filter(i => i !== item));
+            }
+          };
+
+          const undoItem = (item) => {
+            setCurrentSelection(currentSelection.filter(i => i !== item));
+            setAvailableItems([...availableItems, item].sort((a, b) => allItems.indexOf(a) - allItems.indexOf(b)));
+          };
+
+          const resetSelection = () => {
+            setCurrentSelection([]);
+            setAvailableItems(allItems);
+          };
+
+          const submitSelection = () => {
+            if (currentSelection.length !== 3) return;
+            
+            const setStr = currentSelection.join('-');
+            let newFoundSets = [...foundSets];
+
+            if (newFoundSets.includes(setStr)) {
+              setMessage('Вече намери тази подредба! Опитай друга.');
+            } else {
+              newFoundSets.push(setStr);
+              setFoundSets(newFoundSets);
+              setMessage('Браво! Откри нова подредба.');
+              
+              if (newFoundSets.length === targetCount && onComplete) {
+                 onComplete();
+              }
+            }
+            
+            setTimeout(() => {
+              setMessage('');
+              resetSelection();
+            }, 1500);
+          };
+
+          return (
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-blue-500 animate-slide-up">
+              <h3 className="text-2xl font-extrabold text-blue-700 mb-4 transition-all">
+                {isSolved ? 'Разкрито: Пермутации' : 'Първо предизвикателство: Подреди плодовете'}
+              </h3>
+              <p className="text-gray-600 mb-6 text-lg">
+                Разполагаш с 3 различни плода (🍎, 🍓, 🍇). Имаш за задача да ги подредиш в редица.
+                {!isSolved ? ' Намери всички възможни различни начини на подреждане, за да отключиш тайната на това математическо действие!' : ` Броят на всички възможни подредби е точно ${targetCount}.`}
+              </p>
+
+              <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                <div className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">
+                  <div className="mb-6">
+                    <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Свободни плодове:</div>
+                    <div className="flex gap-3 min-h-[70px]">
+                      {availableItems.map((item, idx) => (
+                        <button key={idx} onClick={() => selectItem(item)} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Твоята редица:</div>
+                    <div className="flex gap-3 bg-gray-200 p-3 rounded-2xl min-h-[90px] items-center">
+                      {[0, 1, 2].map((slotIdx) => (
+                        <div key={slotIdx} className="w-16 h-16 border-2 border-dashed border-gray-400 bg-white/50 rounded-xl flex items-center justify-center">
+                          {currentSelection[slotIdx] ? (
+                            <button onClick={() => undoItem(currentSelection[slotIdx])} className="text-5xl hover:scale-110 transition-transform">
+                              {currentSelection[slotIdx]}
+                            </button>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={submitSelection}
+                    disabled={currentSelection.length !== 3}
+                    className={`w-full py-4 rounded-xl font-bold text-white transition-all text-lg shadow-md ${currentSelection.length === 3 ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                  >
+                    Запиши редицата
+                  </button>
+                  <div className="min-h-[24px] mt-3">
+                     {message && <div className="text-center font-bold text-blue-600 animate-fade-in">{message}</div>}
+                  </div>
+                </div>
+
+                <div className="flex-1 bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-bold text-blue-900 text-lg">Намерени: {foundSets.length} / {targetCount}</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {foundSets.map((set, idx) => (
+                      <div key={idx} className="bg-white p-3 rounded-xl shadow-sm text-center text-3xl flex justify-center gap-1 border border-blue-50 animate-pop-in">
+                        {set.split('-').map((item, i) => <span key={i}>{item}</span>)}
+                      </div>
+                    ))}
+                    {Array.from({ length: targetCount - foundSets.length }).map((_, idx) => (
+                      <div key={`empty-${idx}`} className="bg-gray-100/50 p-3 rounded-xl text-center text-xl text-gray-400 border-2 border-dashed border-gray-200 flex items-center justify-center h-[62px]">
+                        ?
+                      </div>
+                    ))}
+                  </div>
+                  {isSolved && (
+                    <div className="mt-6 p-4 bg-green-100 text-green-800 rounded-xl text-center font-bold text-lg flex items-center justify-center gap-2 animate-fade-in">
+                      <Trophy size={24} /> Мисията изпълнена!
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {isSolved && (
+                <div className="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 animate-slide-up shadow-inner">
+                   <h4 className="text-xl font-extrabold text-blue-800 mb-3 flex items-center gap-2">
+                     <CheckCircle size={24} className="text-green-500" />
+                     Определение: Пермутации
+                   </h4>
+                   <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+                    Начинът на подреждане на <strong>всички</strong> елементи от едно множество в определен ред се нарича <strong>Пермутация</strong>. 
+                    Броят на всички възможни подредби на <MathFormula tex="n" /> различни елемента се бележи с <MathFormula tex="P_n" />.
+                  </p>
+                  <div className="bg-white p-5 rounded-xl text-center text-xl text-blue-900 shadow-sm border border-blue-100">
+                    <MathFormula tex="P_n = n! = 1 \cdot 2 \cdot 3 \cdots n" display={true} />
+                    <div className="text-sm text-gray-500 mt-2 font-sans">("<MathFormula tex="n" /> факториел")</div>
+                  </div>
+                  <p className="text-center mt-4 text-gray-600 text-lg">
+                    В нашата задача: <MathFormula tex="P_3 = 3! = 1 \cdot 2 \cdot 3 = 6" />
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        const VariationsLab = ({ onComplete }) => {
+          const allItems = ['🚗', '🚕', '🚙', '🚌'];
+          const [availableItems, setAvailableItems] = useState(allItems);
+          const [currentSelection, setCurrentSelection] = useState([]);
+          const [foundSets, setFoundSets] = useState([]);
+          const [message, setMessage] = useState('');
+
+          const targetCount = 12;
+          const isSolved = foundSets.length === targetCount;
+
+          const selectItem = (item) => {
+            if (currentSelection.length < 2) {
+              setCurrentSelection([...currentSelection, item]);
+              setAvailableItems(availableItems.filter(i => i !== item));
+            }
+          };
+
+          const undoItem = (item) => {
+            setCurrentSelection(currentSelection.filter(i => i !== item));
+            setAvailableItems([...availableItems, item].sort((a, b) => allItems.indexOf(a) - allItems.indexOf(b)));
+          };
+
+          const resetSelection = () => {
+            setCurrentSelection([]);
+            setAvailableItems(allItems);
+          };
+
+          const submitSelection = () => {
+            if (currentSelection.length !== 2) return;
+            
+            const setStr = currentSelection.join('-');
+            let newFoundSets = [...foundSets];
+
+            if (newFoundSets.includes(setStr)) {
+              setMessage('Този начин на паркиране вече е открит!');
+            } else {
+              newFoundSets.push(setStr);
+              setFoundSets(newFoundSets);
+              setMessage('Супер! Намери нова възможност.');
+              
+              if (newFoundSets.length === targetCount && onComplete) {
+                onComplete();
+              }
+            }
+
+            setTimeout(() => {
+              setMessage('');
+              resetSelection();
+            }, 1500);
+          };
+
+          return (
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-emerald-500 animate-slide-up">
+              <h3 className="text-2xl font-extrabold text-emerald-700 mb-4 transition-all">
+                {isSolved ? 'Разкрито: Вариации' : 'Второ предизвикателство: Паркингът'}
+              </h3>
+              <p className="text-gray-600 mb-6 text-lg">
+                Разполагаш с 4 различни коли (🚗, 🚕, 🚙, 🚌), но имаш само <strong>2 паркоместа</strong>. 
+                {!isSolved ? ' Избери 2 коли и ги паркирай. Намери всички възможни начини! Внимание: Редът на паркиране (коя е първа и коя втора) има значение!' : ` Откри всички ${targetCount} начина на паркиране.`}
+              </p>
+
+              <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                <div className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">
+                  <div className="mb-6">
+                    <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Автопарк:</div>
+                    <div className="flex gap-3 min-h-[70px]">
+                      {availableItems.map((item, idx) => (
+                        <button key={idx} onClick={() => selectItem(item)} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Паркоместа:</div>
+                    <div className="flex gap-4 bg-gray-200 p-4 rounded-2xl min-h-[100px] items-center justify-center">
+                      {[0, 1].map((slotIdx) => (
+                        <div key={slotIdx} className="w-20 h-20 border-4 border-dashed border-gray-400 bg-white/60 rounded-xl flex flex-col items-center justify-center relative">
+                          <span className="absolute -bottom-6 text-xs text-gray-500 font-bold bg-gray-200 px-2 py-1 rounded-full">Място {slotIdx + 1}</span>
+                          {currentSelection[slotIdx] ? (
+                            <button onClick={() => undoItem(currentSelection[slotIdx])} className="text-5xl hover:scale-110 transition-transform">
+                              {currentSelection[slotIdx]}
+                            </button>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={submitSelection}
+                    disabled={currentSelection.length !== 2}
+                    className={`w-full py-4 mt-2 rounded-xl font-bold text-white transition-all text-lg shadow-md ${currentSelection.length === 2 ? 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                  >
+                    Запази паркирането
+                  </button>
+                  <div className="min-h-[24px] mt-3">
+                     {message && <div className="text-center font-bold text-emerald-600 animate-fade-in">{message}</div>}
+                  </div>
+                </div>
+
+                <div className="flex-1 bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-bold text-emerald-900 text-lg">Намерени: {foundSets.length} / {targetCount}</h4>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {foundSets.map((set, idx) => (
+                      <div key={idx} className="bg-white p-2 rounded-xl shadow-sm text-center text-3xl flex justify-center gap-1 border border-emerald-50 animate-pop-in">
+                         {set.split('-').map((item, i) => <span key={i}>{item}</span>)}
+                      </div>
+                    ))}
+                    {Array.from({ length: targetCount - foundSets.length }).map((_, idx) => (
+                      <div key={`empty-${idx}`} className="bg-gray-100/50 p-2 rounded-xl text-center text-xl text-gray-400 border-2 border-dashed border-gray-200 flex items-center justify-center h-[54px]">
+                        ?
+                      </div>
+                    ))}
+                  </div>
+                  {isSolved && (
+                    <div className="mt-6 p-4 bg-green-100 text-green-800 rounded-xl text-center font-bold text-lg flex items-center justify-center gap-2 animate-fade-in">
+                      <Trophy size={24} /> Паркингът е пълен!
+                    </div>
+                  )}
+                </div>
+              </div>
+
+               {isSolved && (
+                <div className="mt-8 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-2xl border border-emerald-100 animate-slide-up shadow-inner">
+                   <h4 className="text-xl font-extrabold text-emerald-800 mb-3 flex items-center gap-2">
+                     <CheckCircle size={24} className="text-green-500" />
+                     Определение: Вариации (без повторение)
+                   </h4>
+                   <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+                    Избирането на <MathFormula tex="k" /> елемента от общо <MathFormula tex="n" /> възможни и тяхното <strong>подреждане</strong> (където редът има значение) се нарича <strong>Вариация</strong>. 
+                    Бележи се с <MathFormula tex="V_n^k" />.
+                  </p>
+                  <div className="bg-white p-5 rounded-xl text-center text-xl text-emerald-900 shadow-sm border border-emerald-100">
+                    <MathFormula tex="V_n^k = \frac{n!}{(n - k)!} = n(n - 1) \cdots (n - k + 1)" display={true} />
+                  </div>
+                  <p className="text-center mt-4 text-gray-600 text-lg">
+                    В нашата задача: <MathFormula tex="n=4" /> (коли), <MathFormula tex="k=2" /> (места). <MathFormula tex="V_4^2 = 4 \cdot 3 = 12" />
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        const CombinationsLab = ({ onComplete }) => {
+          const allItems = ['⚽', '🏀', '🏐', '🎾'];
+          const [availableItems, setAvailableItems] = useState(allItems);
+          const [currentSelection, setCurrentSelection] = useState([]);
+          const [foundSets, setFoundSets] = useState([]);
+          const [message, setMessage] = useState('');
+          const [isError, setIsError] = useState(false);
+
+          const targetCount = 6; 
+          const isSolved = foundSets.length === targetCount;
+
+          const selectItem = (item) => {
+            if (currentSelection.length < 2) {
+              setCurrentSelection([...currentSelection, item]);
+              setAvailableItems(availableItems.filter(i => i !== item));
+            }
+          };
+
+          const undoItem = (item) => {
+            setCurrentSelection(currentSelection.filter(i => i !== item));
+            setAvailableItems([...availableItems, item].sort((a, b) => allItems.indexOf(a) - allItems.indexOf(b)));
+          };
+
+          const resetSelection = () => {
+            setCurrentSelection([]);
+            setAvailableItems(allItems);
+          };
+
+          const submitSelection = () => {
+            if (currentSelection.length !== 2) return;
+            
+            const sortedSelection = [...currentSelection].sort();
+            const setStr = sortedSelection.join('-');
+            let newFoundSets = [...foundSets];
+            
+            if (newFoundSets.includes(setStr)) {
+              setMessage('Внимание! Тази група вече я има. В торбата редът няма значение (напр. ⚽🏀 = 🏀⚽).');
+              setIsError(true);
+            } else {
+              newFoundSets.push(setStr);
+              setFoundSets(newFoundSets);
+              setMessage('Чудесно! Откри нова група.');
+              setIsError(false);
+              
+              if (newFoundSets.length === targetCount && onComplete) {
+                onComplete();
+              }
+            }
+
+            setTimeout(() => {
+              setMessage('');
+              setIsError(false);
+              resetSelection();
+            }, 3500);
+          };
+
+          return (
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-purple-500 animate-slide-up">
+              <h3 className="text-2xl font-extrabold text-purple-700 mb-4 transition-all">
+                {isSolved ? 'Разкрито: Комбинации' : 'Трето предизвикателство: Спортната торба'}
+              </h3>
+              <p className="text-gray-600 mb-6 text-lg">
+                Имаме 4 различни топки. Трябва да избереш <strong>2 от тях</strong> и да ги сложиш в обща торба. 
+                {!isSolved ? ' Намери всички възможни "групички". Помисли: има ли значение коя топка слагаш първа и коя втора вътре в торбата?' : ` Намери всички ${targetCount} уникални групи (комбинации).`}
+              </p>
+
+              <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                <div className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">
+                  <div className="mb-6">
+                    <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Свободни топки:</div>
+                    <div className="flex gap-3 min-h-[70px]">
+                      {availableItems.map((item, idx) => (
+                        <button key={idx} onClick={() => selectItem(item)} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <div className="text-sm font-bold mb-3 text-purple-600 uppercase tracking-wider flex items-center gap-2">
+                      Торба (Група от 2): <span className="text-xs normal-case text-gray-500">(Редът няма значение)</span>
+                    </div>
+                    <div className="flex gap-2 bg-purple-100 p-4 rounded-full min-h-[100px] items-center justify-center border-4 border-purple-300 shadow-inner">
+                      {currentSelection.length === 0 && <span className="text-purple-400 text-sm italic">Торбата е празна...</span>}
+                      {currentSelection.map((item, idx) => (
+                        <button key={idx} onClick={() => undoItem(item)} className="text-5xl hover:scale-110 transition-transform bg-white rounded-full p-2 shadow-md">
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={submitSelection}
+                    disabled={currentSelection.length !== 2}
+                    className={`w-full py-4 mt-2 rounded-xl font-bold text-white transition-all text-lg shadow-md ${currentSelection.length === 2 ? 'bg-purple-600 hover:bg-purple-700 hover:shadow-lg active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                  >
+                    Хвърли в торбата
+                  </button>
+                  <div className="min-h-[40px] mt-3 flex items-center justify-center">
+                     {message && (
+                        <div className={`text-center font-bold text-sm px-4 py-2 rounded-lg animate-fade-in flex items-center gap-2 ${isError ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700'}`}>
+                          {isError && <AlertCircle size={16} />} {message}
+                        </div>
+                     )}
+                  </div>
+                </div>
+
+                <div className="flex-1 bg-purple-50/50 p-5 rounded-2xl border border-purple-100">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-bold text-purple-900 text-lg">Намерени групи: {foundSets.length} / {targetCount}</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {foundSets.map((set, idx) => (
+                      <div key={idx} className="bg-white p-3 rounded-full shadow-sm text-center text-3xl flex justify-center gap-2 border border-purple-100 animate-pop-in">
+                         {set.split('-').map((item, i) => <span key={i}>{item}</span>)}
+                      </div>
+                    ))}
+                    {Array.from({ length: targetCount - foundSets.length }).map((_, idx) => (
+                      <div key={`empty-${idx}`} className="bg-gray-100/50 p-3 rounded-full text-center text-xl text-gray-400 border-2 border-dashed border-gray-200 flex items-center justify-center h-[66px]">
+                        ?
+                      </div>
+                    ))}
+                  </div>
+                  {isSolved && (
+                    <div className="mt-6 p-4 bg-green-100 text-green-800 rounded-xl text-center font-bold text-lg flex items-center justify-center gap-2 animate-fade-in">
+                      <Trophy size={24} /> Всички групи са събрани!
+                    </div>
+                  )}
+                </div>
+              </div>
+
+               {isSolved && (
+                <div className="mt-8 bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100 animate-slide-up shadow-inner">
+                   <h4 className="text-xl font-extrabold text-purple-800 mb-3 flex items-center gap-2">
+                     <CheckCircle size={24} className="text-green-500" />
+                     Определение: Комбинации (без повторение)
+                   </h4>
+                   <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+                    Избирането на <MathFormula tex="k" /> елемента от общо <MathFormula tex="n" /> възможни, като <strong>редът НЯМА значение</strong> (избираме просто група/подмножество), се нарича <strong>Комбинация</strong>. 
+                    Бележи се с <MathFormula tex="C_n^k" />.
+                  </p>
+                  <div className="bg-white p-5 rounded-xl text-center text-xl text-purple-900 shadow-sm border border-purple-100 flex flex-col gap-2 items-center justify-center">
+                    <MathFormula tex="C_n^k = \frac{V_n^k}{P_k} = \frac{n!}{k!(n-k)!}" display={true} />
+                    <span className="text-sm font-sans text-gray-500 border-t pt-2 w-3/4">Разделяме на броя на пермутациите, за да премахнем дублиращите се подредби.</span>
+                  </div>
+                  <p className="text-center mt-4 text-gray-600 text-lg">
+                    В нашата задача: <MathFormula tex="C_4^2 = \frac{V_4^2}{P_2} = \frac{12}{2} = 6" />
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        const generateQuestions = () => {
+          const questions = [];
+          
+          const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
+          const factoriel = (num) => (num === 0 || num === 1) ? 1 : num * factoriel(num - 1);
+          const calcV = (n, k) => factoriel(n) / factoriel(n - k);
+          const calcC = (n, k) => calcV(n, k) / factoriel(k);
+
+          // Балансиран микс от 10 въпроса: 3 Пермутации, 3 Вариации, 3 Комбинации + 1 случаен
+          const types = [1, 1, 1, 2, 2, 2, 3, 3, 3, randomInt(1, 3)];
+          
+          // Разбъркване на видовете въпроси, за да се падат в случаен ред
+          for (let i = types.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [types[i], types[j]] = [types[j], types[i]];
+          }
+
+          for (let i = 0; i < 10; i++) {
+            const type = types[i];
+            let n, k, answer, qText, options;
+            
+            if (type === 1) { // ПЕРМУТАЦИИ
+              n = randomInt(4, 7);
+              answer = factoriel(n);
+              const scenarios = [
+                <>По колко различни начина могат да се подредят <MathFormula tex={n.toString()} /> различни книги на един рафт?</>,
+                <><MathFormula tex={n.toString()} /> ученици трябва да се подредят в редица за снимка. Колко са възможните подредби?</>,
+                <>Имаме <MathFormula tex={n.toString()} /> различни картини. По колко начина можем да ги закачим една до друга на стената?</>,
+                <>В състезание участват <MathFormula tex={n.toString()} /> бегачи. По колко различни начина може да изглежда крайното класиране?</>,
+                <>Колко различни думи (дори и без смисъл) могат да се съставят чрез разместване на буквите на дума с <MathFormula tex={n.toString()} /> различни букви?</>
+              ];
+              qText = scenarios[randomInt(0, scenarios.length - 1)];
+              options = [answer, factoriel(n-1), answer * 2, n * n];
+            } 
+            else if (type === 2) { // ВАРИАЦИИ
+              n = randomInt(6, 11);
+              k = randomInt(2, 3);
+              answer = calcV(n, k);
+              
+              const scenarios = [
+                 <>От клас с <MathFormula tex={n.toString()} /> ученици трябва да се изберат председател и секретар. По колко начина може да стане това?</>,
+                 <>На турнир участват <MathFormula tex={n.toString()} /> отбора. По колко начина могат да се разпределят златните и сребърните медали?</>,
+                 <>Колко различни <MathFormula tex={k.toString()} />-цифрени числа могат да се образуват от <MathFormula tex={n.toString()} /> различни цифри (без нула), ако не се повтарят?</>,
+                 <>Дадени са <MathFormula tex={`n=${n}, k=${k}`} />. Редът ИМА значение. Изчисли <MathFormula tex={`V_{${n}}^{${k}}`} />.</>
+              ];
+              
+              if (k === 3) {
+                  scenarios[0] = <>От <MathFormula tex={n.toString()} /> кандидати трябва да се изберат управител, счетоводител и касиер. По колко начина?</>;
+                  scenarios[1] = <>На турнир участват <MathFormula tex={n.toString()} /> отбора. По колко начина могат да се разпределят златен, сребърен и бронзов медал?</>;
+              }
+
+              qText = scenarios[randomInt(0, scenarios.length - 1)];
+              options = [answer, calcC(n,k), answer * 2, Math.pow(n, k)];
+            } 
+            else { // КОМБИНАЦИИ
+              n = randomInt(6, 14);
+              k = randomInt(2, 4);
+              answer = calcC(n, k);
+              
+              const scenarios = [
+                 <>От група от <MathFormula tex={n.toString()} /> приятели трябва да се изберат <MathFormula tex={k.toString()} /> за отбор. По колко начина може да стане това?</>,
+                 <>В кутия има <MathFormula tex={n.toString()} /> различни бонбона. По колко начина можеш да си избереш точно <MathFormula tex={k.toString()} /> от тях?</>,
+                 <>За училищен проект от <MathFormula tex={n.toString()} /> ученици се избира група от <MathFormula tex={k.toString()} /> дежурни. Колко са възможните групи?</>,
+                 <>Дадени са <MathFormula tex={`n=${n}, k=${k}`} />. Редът НЯМА значение. Изчисли <MathFormula tex={`C_{${n}}^{${k}}`} />.</>,
+                 <>От <MathFormula tex={n.toString()} /> налични цвята трябва да изберем <MathFormula tex={k.toString()} /> за направата на букет. По колко начина може да стане това?</>
+              ];
+
+              qText = scenarios[randomInt(0, scenarios.length - 1)];
+              options = [answer, calcV(n,k), answer * k, answer + n];
+            }
+
+            // Премахваме дублиращи се грешни отговори и попълваме до 4 опции
+            options = options.filter((v, idx, arr) => arr.indexOf(v) === idx && v > 0);
+            while(options.length < 4) {
+                let fakeOpt = answer + randomInt(-5, 15);
+                if(fakeOpt === answer) fakeOpt += randomInt(1, 5); // избягваме дублиране на верния
+                if (!options.includes(fakeOpt) && fakeOpt > 0) options.push(fakeOpt);
+            }
+            
+            // Разбъркваме 4-те отговора за да не са на едно и също място
+            for (let j = options.length - 1; j > 0; j--) {
+                const randIdx = Math.floor(Math.random() * (j + 1));
+                [options[j], options[randIdx]] = [options[randIdx], options[j]];
+            }
+
+            questions.push({ id: i, text: qText, options: options, correctAnswer: answer });
+          }
+          return questions;
+        };
+
+        const Quiz = () => {
+          const [questions, setQuestions] = useState([]);
+          const [currentQIndex, setCurrentQIndex] = useState(0);
+          const [score, setScore] = useState(0);
+          const [showResults, setShowResults] = useState(false);
+          const [selectedAnswer, setSelectedAnswer] = useState(null);
+
+          useEffect(() => {
+            setQuestions(generateQuestions());
+          }, []);
+
+          const handleAnswer = (answer) => {
+            setSelectedAnswer(answer);
+            
+            setTimeout(() => {
+              if (answer === questions[currentQIndex].correctAnswer) {
+                setScore(score + 1);
+              }
+              
+              if (currentQIndex < questions.length - 1) {
+                setCurrentQIndex(currentQIndex + 1);
+                setSelectedAnswer(null);
+              } else {
+                setShowResults(true);
+              }
+            }, 1000);
+          };
+
+          const restartQuiz = () => {
+            setQuestions(generateQuestions());
+            setCurrentQIndex(0);
+            setScore(0);
+            setShowResults(false);
+            setSelectedAnswer(null);
+          };
+
+          if (questions.length === 0) return <div>Зареждане...</div>;
+
+          return (
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-indigo-500 animate-fade-in flex flex-col min-h-[500px]">
+              <div className="flex justify-between items-center mb-6 border-b pb-4">
+                <h3 className="text-2xl font-extrabold text-indigo-700">Финален Тест</h3>
+                {!showResults && (
+                   <span className="bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full font-bold text-sm">
+                     Въпрос {currentQIndex + 1} от 10
+                   </span>
+                )}
+              </div>
+
+              {!showResults ? (
+                <div className="flex-1 flex flex-col">
+                  <div className="mb-8 text-xl font-medium text-gray-800 bg-gray-50 p-6 rounded-2xl flex flex-wrap gap-1 items-center leading-relaxed">
+                    {questions[currentQIndex].text}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-auto">
+                    {questions[currentQIndex].options.map((opt, idx) => {
+                      let btnClass = "bg-white border-2 border-indigo-100 hover:border-indigo-500 hover:bg-indigo-50 text-indigo-900";
+                      if (selectedAnswer !== null) {
+                        if (opt === questions[currentQIndex].correctAnswer) btnClass = "bg-green-500 border-green-600 text-white shadow-lg scale-105";
+                        else if (opt === selectedAnswer) btnClass = "bg-red-500 border-red-600 text-white";
+                        else btnClass = "bg-gray-100 border-gray-200 text-gray-400 opacity-50";
+                      }
+
+                      return (
+                        <button 
+                          key={idx}
+                          disabled={selectedAnswer !== null}
+                          onClick={() => handleAnswer(opt)}
+                          className={`p-4 rounded-xl text-lg font-bold transition-all duration-300 ${btnClass}`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center animate-pop-in">
+                  <Trophy size={64} className={`mb-4 ${score > 7 ? 'text-yellow-400' : 'text-gray-400'}`} />
+                  <h4 className="text-3xl font-bold text-gray-800 mb-2">Резултат: {score} от 10</h4>
+                  <p className="text-lg text-gray-600 mb-8">
+                    {score >= 9 ? 'Брилянтно! Истински майстор на комбинаториката!' : 
+                     score >= 5 ? 'Добър опит! Имаш стабилни основи.' : 
+                     'Може би трябва да преговориш теорията отново.'}
+                  </p>
+                  <button 
+                    onClick={restartQuiz}
+                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-full font-bold text-lg transition-all shadow-md hover:shadow-lg"
+                  >
+                    <RefreshCw size={20} /> Нов тест (Нови задачи)
+                  </button>
+                </div>
+              )}
+
+              {/* АВТОРСКИ ПРАВА */}
+              <div className="mt-auto pt-8 border-t border-gray-100 text-center text-xs text-gray-400">
+                <p>© Валя Витковска, 2026</p>
+                <p>Авторска идея, методическа разработка, редакция и проверка: Валя Витковска.</p>
+                <p>Създадено с помощта на AI инструменти</p>
+              </div>
+            </div>
+          );
+        };
+
+        function App() {
+          const [started, setStarted] = useState(false);
+          const [activeTab, setActiveTab] = useState('permutations');
+          const [solvedLevels, setSolvedLevels] = useState({
+            permutations: false,
+            variations: false,
+            combinations: false
+          });
+
+          if (!started) {
+            return (
+              <div className="min-h-screen bg-slate-50 font-sans">
+                <HomePage onStart={() => setStarted(true)} />
+              </div>
+            );
+          }
+
+          return (
+            <div className="min-h-screen bg-slate-50 font-sans text-gray-800 selection:bg-blue-200 flex flex-col relative overflow-x-hidden">
+              <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-3 flex items-center gap-4 sticky top-0 z-50">
+                <button onClick={() => setStarted(false)} className="text-gray-500 hover:text-blue-600 transition-colors flex items-center justify-center bg-gray-100 hover:bg-blue-50 p-2 rounded-xl" title="Към началото">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </button>
+                <div>
+                  <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight leading-tight">Комбинаторика</h1>
+                  <h2 className="text-sm text-gray-500 font-medium hidden sm:block">Интерактивен урок за 8. клас</h2>
+                </div>
+              </header>
+
+              <div className="max-w-6xl w-full mx-auto px-4 mt-6 flex-1 flex flex-col relative z-10">
+                <div className="flex bg-white rounded-2xl shadow-sm p-1.5 gap-2 mb-6 overflow-x-auto border border-gray-200 shrink-0 hide-scrollbar">
+                  <button 
+                    onClick={() => setActiveTab('permutations')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'permutations' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    {solvedLevels.permutations ? <CheckCircle size={18} /> : <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>}
+                    {solvedLevels.permutations ? 'Пермутации' : 'Предизвикателство'}
+                  </button>
+                  
+                  <button 
+                    onClick={() => setActiveTab('variations')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'variations' ? 'bg-emerald-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    {solvedLevels.variations ? <CheckCircle size={18} /> : <span className="bg-emerald-100 text-emerald-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>}
+                    {solvedLevels.variations ? 'Вариации' : 'Предизвикателство'}
+                  </button>
+                  
+                  <button 
+                    onClick={() => setActiveTab('combinations')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'combinations' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                     {solvedLevels.combinations ? <CheckCircle size={18} /> : <span className="bg-purple-100 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>}
+                    {solvedLevels.combinations ? 'Комбинации' : 'Предизвикателство'}
+                  </button>
+
+                  <button 
+                    onClick={() => setActiveTab('summary')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'summary' ? 'bg-amber-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                     <span className="bg-amber-100 text-amber-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
+                     Обобщение
+                  </button>
+
+                  <button 
+                    onClick={() => setActiveTab('quiz')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'quiz' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                     <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span>
+                     Тест
+                  </button>
+                </div>
+
+                <main className="mb-12 flex-1 relative">
+                  {activeTab === 'permutations' && <PermutationsLab onComplete={() => setSolvedLevels(prev => ({...prev, permutations: true}))} />}
+                  {activeTab === 'variations' && <VariationsLab onComplete={() => setSolvedLevels(prev => ({...prev, variations: true}))} />}
+                  {activeTab === 'combinations' && <CombinationsLab onComplete={() => setSolvedLevels(prev => ({...prev, combinations: true}))} />}
+                  {activeTab === 'summary' && (
+                    <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-amber-500 animate-fade-in relative z-10">
+                      <h3 className="text-3xl font-extrabold text-amber-600 mb-6 flex items-center gap-3">
+                        Обобщение: Как да решаваме задачи?
+                      </h3>
+                      <p className="text-gray-700 text-lg mb-8">
+                        Преди да преминеш към теста, нека преговорим! Най-важното в комбинаториката е да си зададеш правилните въпроси, за да разбереш коя формула ти трябва.
+                      </p>
+
+                      <div className="grid md:grid-cols-3 gap-6 mb-8">
+                        
+                        {/* Пермутации */}
+                        <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                          <h4 className="text-xl font-bold text-blue-800 border-b border-blue-200 pb-2 mb-4 flex items-center gap-2">
+                            1. Пермутации (<MathFormula tex="P_n" />)
+                          </h4>
+                          <ul className="space-y-3 mb-6">
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-blue-500 mt-0.5">Въпрос:</span>
+                              <span className="text-gray-700">Използваме ли <strong>ВСИЧКИ</strong> дадени елементи?</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-green-600 mt-0.5">Отговор:</span>
+                              <span className="text-gray-700"><strong>ДА.</strong> Просто ги подреждаме (разбъркваме).</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-blue-500 mt-0.5">Ред:</span>
+                              <span className="text-gray-700">Има значение.</span>
+                            </li>
+                          </ul>
+                          <div className="bg-white p-3 rounded-xl text-center text-blue-900 border border-blue-100">
+                            <MathFormula tex="P_n = n!" display={true} />
+                          </div>
+                          <p className="text-sm text-gray-500 mt-3 italic">Напр: По колко начина можем да подредим 5 книги на един рафт?</p>
+                        </div>
+
+                        {/* Вариации */}
+                        <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-shadow">
+                          <h4 className="text-xl font-bold text-emerald-800 border-b border-emerald-200 pb-2 mb-4 flex items-center gap-2">
+                            2. Вариации (<MathFormula tex="V_n^k" />)
+                          </h4>
+                          <ul className="space-y-3 mb-6">
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-emerald-500 mt-0.5">Въпрос:</span>
+                              <span className="text-gray-700">Избираме ли само <strong>ЧАСТ</strong> от елементите?</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-green-600 mt-0.5">Отговор:</span>
+                              <span className="text-gray-700"><strong>ДА.</strong> Избираме <span className="italic"><MathFormula tex="k" /></span> от <span className="italic"><MathFormula tex="n" /></span>.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-emerald-500 mt-0.5">Ред:</span>
+                              <span className="text-gray-700"><strong>ИМА</strong> значение! (АБ ≠ БА)</span>
+                            </li>
+                          </ul>
+                          <div className="bg-white p-3 rounded-xl text-center text-emerald-900 border border-emerald-100">
+                            <MathFormula tex="V_n^k = \frac{n!}{(n-k)!}" display={true} />
+                          </div>
+                          <p className="text-sm text-gray-500 mt-3 italic">Напр: Избор на председател и секретар от клас с 20 ученици.</p>
+                        </div>
+
+                        {/* Комбинации */}
+                        <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
+                          <h4 className="text-xl font-bold text-purple-800 border-b border-purple-200 pb-2 mb-4 flex items-center gap-2">
+                            3. Комбинации (<MathFormula tex="C_n^k" />)
+                          </h4>
+                          <ul className="space-y-3 mb-6">
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-purple-500 mt-0.5">Въпрос:</span>
+                              <span className="text-gray-700">Избираме ли само <strong>ЧАСТ</strong> от елементите?</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-green-600 mt-0.5">Отговор:</span>
+                              <span className="text-gray-700"><strong>ДА.</strong> Избираме <span className="italic"><MathFormula tex="k" /></span> от <span className="italic"><MathFormula tex="n" /></span>.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-bold text-purple-500 mt-0.5">Ред:</span>
+                              <span className="text-gray-700"><strong>НЯМА</strong> значение! (АБ = БА)</span>
+                            </li>
+                          </ul>
+                          <div className="bg-white p-3 rounded-xl text-center text-purple-900 border border-purple-100">
+                            <MathFormula tex="C_n^k = \frac{V_n^k}{P_k}" display={true} />
+                          </div>
+                          <p className="text-sm text-gray-500 mt-3 italic">Напр: Избор на двама дежурни от клас с 20 ученици.</p>
+                        </div>
+
+                      </div>
+                      
+                      <div className="flex justify-center mt-2 border-t border-amber-100 pt-8 pb-4">
+                        <button 
+                          onClick={() => setActiveTab('quiz')}
+                          className="group relative inline-flex items-center justify-center px-10 py-4 font-bold text-white transition-all duration-200 bg-indigo-600 rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 text-xl shadow-lg hover:shadow-xl hover:-translate-y-1 animate-pop-in"
+                        >
+                          Премини към Теста
+                          <ArrowRight className="ml-3 group-hover:translate-x-2 transition-transform" />
+                        </button>
+                      </div>
+
+                    </div>
+                  )}
+                  {activeTab === 'quiz' && <Quiz />}
+                </main>
+              </div>
+              
+              <SmallLogo onHome={() => { setStarted(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

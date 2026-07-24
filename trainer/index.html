@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Комбинаторен модел – интерактивен тренажор</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #0f172a;
+            background:
+                radial-gradient(circle at 8% 12%, rgba(45,212,191,.28), transparent 28rem),
+                radial-gradient(circle at 92% 18%, rgba(96,165,250,.25), transparent 30rem),
+                radial-gradient(circle at 82% 82%, rgba(192,132,252,.22), transparent 28rem),
+                radial-gradient(circle at 12% 88%, rgba(251,191,36,.20), transparent 27rem),
+                linear-gradient(145deg, #ecfeff 0%, #eff6ff 38%, #faf5ff 72%, #fffbeb 100%);
+            background-attachment: fixed;
+            position: relative;
+            isolation: isolate;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, rgba(15,118,110,.17) 1.4px, transparent 1.6px);
+            background-size: 28px 28px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,.75), rgba(0,0,0,.18));
+        }
+        body > :not(.combinatorics-bg) { z-index: 1; }
+        .combinatorics-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .combinatorics-bg::before, .combinatorics-bg::after { content:""; position:absolute; width:34rem; height:34rem; border-radius:46% 54% 61% 39%; filter:blur(34px); opacity:.42; animation:bgBlob 16s ease-in-out infinite alternate; }
+        .combinatorics-bg::before { left:-13rem; top:16%; background:conic-gradient(from 40deg, #2dd4bf, #60a5fa, #c084fc, #2dd4bf); }
+        .combinatorics-bg::after { right:-14rem; bottom:4%; background:conic-gradient(from 210deg, #fbbf24, #fb7185, #a78bfa, #38bdf8, #fbbf24); animation-delay:-8s; }
+        .combinatorics-bg svg { position:relative; z-index:1; width: 100%; height: 100%; opacity: .96; }
+        .bg-network-line { stroke-dasharray: 9 15; animation: bgDash 18s linear infinite; }
+        .bg-formula { transform-box: fill-box; transform-origin: center; animation: formulaDrift 9s ease-in-out infinite; }
+        .bg-formula-delay { animation-delay: -4.5s; animation-direction: reverse; }
+        .bg-node { transform-box: fill-box; transform-origin: center; animation: nodePulse 4.8s ease-in-out infinite; }
+        .bg-node:nth-of-type(2n) { animation-delay: -2.2s; }
+        @keyframes bgDash { to { stroke-dashoffset: -240; } }
+        @keyframes bgBlob { from { transform:translate3d(-2%, -3%, 0) rotate(-7deg) scale(.94); } to { transform:translate3d(6%, 5%, 0) rotate(9deg) scale(1.08); } }
+        @keyframes formulaDrift { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-13px) rotate(2deg); } }
+        @keyframes nodePulse { 0%,100% { transform: scale(1); opacity: .62; } 50% { transform: scale(1.22); opacity: .95; } }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-3px, 0, 0); } 40%, 60% { transform: translate3d(3px, 0, 0); } }
+        .disabled-block { opacity: 0.6; pointer-events: none; filter: grayscale(50%); }
+        .math-input { width: 3.5rem; text-align: center; border: 2px solid #cbd5e1; border-radius: 0.5rem; padding: 0.25rem; font-weight: bold; font-size: 1.25rem; color: #1e293b; outline: none; transition: border-color 0.2s; }
+        .math-input:focus { border-color: #10b981; }
+        .math-input-large { width: 6rem; text-align: center; border: 2px solid #cbd5e1; border-radius: 0.5rem; padding: 0.5rem; font-weight: bold; font-size: 1.5rem; color: #1e293b; outline: none; transition: border-color 0.2s; }
+        .math-input-large:focus { border-color: #3b82f6; }
+        .diff-label:focus-within { outline: 3px solid #6ee7b7; outline-offset: 2px; }
+        
+        .math-fraction { display: inline-table; vertical-align: middle; text-align: center; border-collapse: collapse; margin: 0 0.5rem; }
+        .math-fraction-num { border-bottom: 2px solid #1e293b; padding: 0 0.5rem 0.125rem 0.5rem; font-weight: 600; font-size: 1.125rem; }
+        .math-fraction-den { padding: 0.125rem 0.5rem 0 0.5rem; font-weight: 600; font-size: 1.125rem; }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes dashFast { to { stroke-dashoffset: -24; } }
+        .animate-float { animation: float 3.5s ease-in-out infinite; }
+        .animate-float-delay { animation: float 4.5s ease-in-out infinite reverse; }
+        .animate-dash-fast { stroke-dasharray: 8 16; animation: dashFast 1.5s linear infinite; }
+        
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Клас за уникално оцветяване на повтарящи се емоджита */
+        .color-shift { display: inline-block; transition: filter 0.3s, transform 0.25s; transform-origin: 50% 80%; }
+        #joker-container:not(.hidden) .color-shift { animation: jokerDance 2.1s ease-in-out infinite; }
+        #joker-container:not(.hidden) .color-shift:hover { animation-play-state: paused; transform: scale(1.3) rotate(-5deg); }
+        #joker-container:not(.hidden) .overflow-x-auto > div { animation: jokerCardIn .45s ease-out both, jokerCardFloat 3.2s ease-in-out .45s infinite; }
+        #joker-container:not(.hidden) .overflow-x-auto > div:nth-child(2n) { animation-delay: .08s, .65s; }
+        #joker-container:not(.hidden) .overflow-x-auto > div:nth-child(3n) { animation-delay: .16s, .85s; }
+        @keyframes jokerDance { 0%, 100% { transform: translateY(0) rotate(-2deg); } 45% { transform: translateY(-8px) rotate(4deg) scale(1.08); } 65% { transform: translateY(-3px) rotate(-3deg); } }
+        @keyframes jokerCardIn { from { opacity: 0; transform: translateY(14px) scale(.94); } to { opacity: 1; transform: none; } }
+        @keyframes jokerCardFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+        .hint-sequence-item { opacity: .22; transition: opacity .3s, transform .3s, filter .3s; }
+        .hint-sequence-item.hint-revealed { opacity: 1; animation: hintReveal .45s ease-out both; }
+        @keyframes hintReveal { from { opacity: 0; transform: scale(.65) translateY(10px); } to { opacity: 1; transform: none; } }
+        .hint-diagonal { stroke-dasharray: 280; stroke-dashoffset: 280; opacity: 0; }
+        .hint-diagonal.hint-revealed { animation: drawHintLine .65s ease-out forwards; }
+        @keyframes drawHintLine { from { stroke-dashoffset: 280; opacity: 0; } to { stroke-dashoffset: 0; opacity: .38; } }
+        .hint-diagonal.hint-connected { stroke: #f59e0b !important; stroke-width: 2.4 !important; opacity: .95 !important; }
+        .hint-edge { stroke-dasharray: 90; stroke-dashoffset: 90; }
+        .hint-edge.hint-revealed { animation: drawHintEdge .35s ease-out forwards; }
+        @keyframes drawHintEdge { to { stroke-dashoffset: 0; opacity: 1; } }
+        .hint-guide-card { min-height: 7.25rem; }
+        .hint-workbench-chip { animation: hintChipIn .25s ease-out both; }
+        @keyframes hintChipIn { from { opacity: 0; transform: translateY(8px) scale(.88); } to { opacity: 1; transform: none; } }
+        .hint-workbench-empty { background-image: repeating-linear-gradient(135deg, rgba(148,163,184,.08) 0 8px, transparent 8px 16px); }
+        .skirt-icon { --skirt:#db2777; position:relative; display:inline-block; width:1.25em; height:1.2em; vertical-align:-0.16em; }
+        .skirt-icon::before { content:""; position:absolute; left:35%; top:7%; width:30%; height:14%; border-radius:4px; background:#334155; }
+        .skirt-icon::after { content:""; position:absolute; left:8%; top:19%; width:84%; height:76%; background:linear-gradient(135deg, color-mix(in srgb, var(--skirt), white 25%), var(--skirt)); clip-path:polygon(35% 0,65% 0,100% 100%,0 100%); border-radius:0 0 8px 8px; box-shadow:inset -5px 0 rgba(255,255,255,.22); }
+        .task-enter { animation: taskEnter 0.45s ease-out; }
+        @keyframes taskEnter { from { opacity: 0; transform: translateX(18px) scale(.99); } to { opacity: 1; transform: none; } }
+        .score-pop { animation: scorePop 0.45s ease-out; }
+        @keyframes scorePop { 50% { transform: scale(1.35); color: #059669; } }
+        .celebration-dot { position: fixed; z-index: 100; width: 10px; height: 10px; border-radius: 999px; pointer-events: none; animation: celebrate 850ms ease-out forwards; }
+        @keyframes celebrate { to { transform: translate(var(--dx), var(--dy)) rotate(540deg); opacity: 0; } }
+        .guide-step { opacity: 0; animation: guideReveal .6s ease-out forwards; }
+        @keyframes guideReveal { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+        .brand-mark { width: 2.75rem; height: 2.75rem; object-fit: contain; flex: none; opacity: .78; }
+        .brand-mark-corner { position: absolute; top: 1.15rem; right: 1.15rem; width: 2.6rem; height: 2.6rem; object-fit: contain; opacity: .62; }
+        .geo-assistant { object-fit: contain; flex: none; filter: drop-shadow(0 8px 12px rgba(15, 118, 110, .16)); }
+        .geo-assistant-guide { width: 4.75rem; height: 4.75rem; }
+        .geo-assistant-hint { width: 4.25rem; height: 4.25rem; }
+        .geo-assistant-end { width: 7rem; height: 7rem; margin-inline: auto; }
+        button, .global-home {
+            box-shadow: 0 5px 0 rgba(15, 23, 42, .24), 0 10px 20px rgba(15, 23, 42, .14) !important;
+            translate: 0 0;
+            transition: translate .14s ease, box-shadow .14s ease, filter .14s ease, background-color .14s ease !important;
+        }
+        button:not(:disabled):hover, .global-home:hover { translate: 0 -2px; filter: brightness(1.035); }
+        button:not(:disabled):active, .global-home:active {
+            translate: 0 4px;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, .28), 0 4px 8px rgba(15, 23, 42, .12) !important;
+        }
+        button:disabled { box-shadow: 0 3px 0 rgba(148, 163, 184, .25) !important; }
+        .global-home {
+            position: fixed; top: 12px; left: 12px; z-index: 2147483647;
+            border-radius: 999px; background: rgba(255, 255, 255, .94); color: #0f766e;
+            border: 1px solid #99f6e4; padding: 10px 15px; text-decoration: none;
+            font: 800 14px/1.2 system-ui, sans-serif; backdrop-filter: blur(8px);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<a href="../index.html" aria-label="Към началната страница" class="global-home">⌂ Начало</a>
+
+<div class="combinatorics-bg" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+        <defs>
+            <linearGradient id="bgLineGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#14b8a6" stop-opacity=".35"/>
+                <stop offset=".52" stop-color="#3b82f6" stop-opacity=".24"/>
+                <stop offset="1" stop-color="#a855f7" stop-opacity=".32"/>
+            </linearGradient>
+            <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+        </defs>
+        <g fill="none" stroke="url(#bgLineGradient)" stroke-width="2" class="bg-network-line">
+            <path d="M-40 170 C150 30 260 270 430 130 S720 40 870 190 S1160 290 1480 80"/>
+            <path d="M-80 700 C130 540 280 820 470 655 S760 500 930 690 S1230 790 1500 610"/>
+            <path d="M90 930 C180 700 85 525 245 410 S500 315 610 110"/>
+            <path d="M1040 950 C970 745 1120 600 1050 420 S1160 175 1390 -20"/>
+        </g>
+        <g filter="url(#softGlow)">
+            <circle class="bg-node" cx="110" cy="115" r="7" fill="#14b8a6"/><circle class="bg-node" cx="270" cy="220" r="6" fill="#3b82f6"/><circle class="bg-node" cx="430" cy="130" r="8" fill="#8b5cf6"/>
+            <circle class="bg-node" cx="870" cy="190" r="7" fill="#0ea5e9"/><circle class="bg-node" cx="1170" cy="225" r="8" fill="#a855f7"/><circle class="bg-node" cx="1360" cy="95" r="6" fill="#14b8a6"/>
+            <circle class="bg-node" cx="145" cy="610" r="8" fill="#f59e0b"/><circle class="bg-node" cx="470" cy="655" r="7" fill="#14b8a6"/><circle class="bg-node" cx="930" cy="690" r="8" fill="#3b82f6"/><circle class="bg-node" cx="1290" cy="700" r="7" fill="#a855f7"/>
+        </g>
+        <g font-family="Georgia, serif" font-style="italic" font-weight="700" opacity=".30">
+            <text class="bg-formula" x="55" y="340" font-size="74" fill="#0f766e">n!</text>
+            <text class="bg-formula bg-formula-delay" x="1210" y="375" font-size="70" fill="#2563eb">Pₙ</text>
+            <text class="bg-formula" x="75" y="810" font-size="66" fill="#7c3aed">Vₙᵏ</text>
+            <text class="bg-formula bg-formula-delay" x="1190" y="830" font-size="68" fill="#0f766e">Cₙᵏ</text>
+        </g>
+        <g opacity=".28" fill="none" stroke="#7c3aed" stroke-width="2.5">
+            <polygon points="1320,470 1375,500 1375,562 1320,594 1265,562 1265,500"/>
+            <line x1="1320" y1="470" x2="1375" y2="562"/><line x1="1375" y1="500" x2="1265" y2="562"/><line x1="1375" y1="562" x2="1265" y2="500"/>
+        </g>
+    </svg>
+</div>
+
+<!-- НАЧАЛЕН ЕКРАН -->
+<div id="start-screen" class="relative max-w-2xl mx-auto w-full my-8 bg-white/90 backdrop-blur-md rounded-3xl shadow-xl p-8 border border-white/80 fade-in flex-grow">
+    <img src="assets/brand-mark.png" alt="Знак на автора" class="brand-mark-corner" decoding="async">
+    <header class="text-center mb-6">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-emerald-800 mb-2 tracking-tight">Комбинаторика</h1>
+        <p class="text-emerald-600 font-medium text-xl">Интерактивен тренажор</p>
+    </header>
+
+    <section class="mb-8 rounded-2xl border-2 border-teal-100 bg-gradient-to-br from-teal-50 to-blue-50 p-5" aria-labelledby="guide-title">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-3">
+                <img src="assets/geo-assistant.png" alt="Гео – помощникът в тренажора" class="geo-assistant geo-assistant-guide" decoding="async">
+                <div>
+                    <h2 id="guide-title" class="text-xl font-extrabold text-slate-800">Как се работи с тренажора?</h2>
+                    <p class="text-sm font-semibold text-teal-700">Гео ще ти помага да разчиташ условията стъпка по стъпка.</p>
+                </div>
+            </div>
+            <button type="button" onclick="replayGuide()" class="px-3 py-2 rounded-lg bg-white border border-teal-300 text-teal-800 font-bold hover:bg-teal-100">▶ Покажи отново</button>
+        </div>
+        <div id="guide-steps" class="space-y-3">
+            <div class="guide-step flex gap-3 items-start bg-white/90 border border-teal-100 rounded-xl p-3" style="animation-delay:.08s"><span class="w-8 h-8 shrink-0 rounded-full bg-teal-100 text-teal-800 font-black flex items-center justify-center">1</span><p><strong>Настрой тренировката:</strong> избери модели, трудност, брой задачи и таймер.</p></div>
+            <div class="guide-step flex gap-3 items-start bg-white/90 border border-teal-100 rounded-xl p-3" style="animation-delay:.22s"><span class="w-8 h-8 shrink-0 rounded-full bg-amber-100 text-amber-800 font-black flex items-center justify-center">2</span><p><strong>Изследвай условието:</strong> интерактивната подсказка визуализира точно обектите от задачата; можеш да ги маркираш и анимираш. Използването ѝ струва 2 точки.</p></div>
+            <div class="guide-step flex gap-3 items-start bg-white/90 border border-teal-100 rounded-xl p-3" style="animation-delay:.36s"><span class="w-8 h-8 shrink-0 rounded-full bg-blue-100 text-blue-800 font-black flex items-center justify-center">3</span><p><strong>Реши:</strong> при стандартна задача избери модел, по желание запиши израз и въведи резултата.</p></div>
+            <div class="guide-step flex gap-3 items-start bg-white/90 border border-teal-100 rounded-xl p-3" style="animation-delay:.50s"><span class="w-8 h-8 shrink-0 rounded-full bg-violet-100 text-violet-800 font-black flex items-center justify-center">4</span><p><strong>При съставна трудна задача</strong> използвай необходимите модели и въведи направо крайния числов отговор.</p></div>
+            <div class="guide-step flex gap-3 items-start bg-white/90 border border-teal-100 rounded-xl p-3" style="animation-delay:.64s"><span class="w-8 h-8 shrink-0 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center">5</span><p><strong>Провери и учи:</strong> след приключване на задачата се показва подробно решение. Грешен избор на модел завършва задачата с 0 точки.</p></div>
+        </div>
+    </section>
+    
+    <div class="mb-6">
+        <h3 class="text-xl font-bold text-slate-800 border-b pb-2 mb-4">Настройки на тренажора</h3>
+        
+        <h4 class="text-md font-bold text-slate-600 mb-3 uppercase tracking-wide">Включени модели:</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+            <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition shadow-sm">
+                <input type="checkbox" class="model-cb w-5 h-5 accent-emerald-600" value="add" checked>
+                <span class="font-medium text-slate-700">Правило за събиране</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition shadow-sm">
+                <input type="checkbox" class="model-cb w-5 h-5 accent-emerald-600" value="mul" checked>
+                <span class="font-medium text-slate-700">Правило за умножение</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition shadow-sm">
+                <input type="checkbox" class="model-cb w-5 h-5 accent-emerald-600" value="perm" checked>
+                <span class="font-medium text-slate-700">Пермутация</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition shadow-sm">
+                <input type="checkbox" class="model-cb w-5 h-5 accent-emerald-600" value="var" checked>
+                <span class="font-medium text-slate-700">Вариация</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition shadow-sm">
+                <input type="checkbox" class="model-cb w-5 h-5 accent-emerald-600" value="comb" checked>
+                <span class="font-medium text-slate-700">Комбинация</span>
+            </label>
+        </div>
+        
+        <h4 class="text-md font-bold text-slate-600 mb-3 uppercase tracking-wide">Трудност:</h4>
+        <div class="flex flex-wrap gap-4 mb-6">
+            <button type="button" data-difficulty="easy" aria-pressed="true" onclick="selectDifficulty('easy')" class="diff-label flex-1 text-center cursor-pointer p-3 rounded-xl transition border-2 border-transparent bg-slate-50 text-slate-600 hover:bg-emerald-50 border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm">
+                <span class="font-bold block">Лесно</span><small class="block mt-1 text-emerald-700 font-bold">6 т. за задача</small>
+            </button>
+            <button type="button" data-difficulty="medium" aria-pressed="false" onclick="selectDifficulty('medium')" class="diff-label flex-1 text-center cursor-pointer p-3 rounded-xl transition border-2 border-transparent bg-slate-50 text-slate-600 hover:bg-emerald-50">
+                <span class="font-bold block">Средно</span><small class="block mt-1 text-blue-700 font-bold">8 т. за задача</small>
+            </button>
+            <button type="button" data-difficulty="hard" aria-pressed="false" onclick="selectDifficulty('hard')" class="diff-label flex-1 text-center cursor-pointer p-3 rounded-xl transition border-2 border-transparent bg-slate-50 text-slate-600 hover:bg-emerald-50">
+                <span class="font-bold text-rose-700 block">Трудно</span><small class="block mt-1 text-rose-700 font-bold">10 т. за задача</small>
+            </button>
+        </div>
+
+        <h4 class="text-md font-bold text-slate-600 mb-3 uppercase tracking-wide">Брой задачи:</h4>
+        <div class="flex flex-wrap gap-4 mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="taskCount" value="infinite" class="w-5 h-5 accent-emerald-600" checked>
+                <span class="font-medium text-slate-700">Безкрайна</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="taskCount" value="5" class="w-5 h-5 accent-emerald-600">
+                <span class="font-medium text-slate-700">5 задачи</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="taskCount" value="10" class="w-5 h-5 accent-emerald-600">
+                <span class="font-medium text-slate-700">10 задачи</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="taskCount" value="15" class="w-5 h-5 accent-emerald-600">
+                <span class="font-medium text-slate-700">15 задачи</span>
+            </label>
+        </div>
+
+        <h4 class="text-md font-bold text-slate-600 mb-3 uppercase tracking-wide">Таймер:</h4>
+        <div class="flex flex-wrap gap-4 mb-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="timer" value="none" class="w-5 h-5 accent-emerald-600" checked onchange="updateTimerInfo()">
+                <span class="font-medium text-slate-700">Без таймер</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="timer" value="5" class="w-5 h-5 accent-emerald-600" onchange="updateTimerInfo()">
+                <span class="font-medium text-slate-700">5 мин</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="timer" value="10" class="w-5 h-5 accent-emerald-600" onchange="updateTimerInfo()">
+                <span class="font-medium text-slate-700">10 мин</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="timer" value="15" class="w-5 h-5 accent-emerald-600" onchange="updateTimerInfo()">
+                <span class="font-medium text-slate-700">15 мин</span>
+            </label>
+        </div>
+        <p id="timer-info" class="text-sm text-slate-500 italic px-2">Свободна тренировка без времево ограничение.</p>
+    </div>
+    
+    <button id="start-game-btn" onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-xl text-xl transition shadow-lg focus:ring-4 focus:ring-emerald-300 uppercase tracking-wide">Започни - Лесно ниво</button>
+</div>
+
+<!-- ОСНОВЕН ТРЕНАЖОР -->
+<main id="app-container" class="hidden max-w-4xl mx-auto w-full my-8 flex-grow">
+    <div class="flex justify-between items-center bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-white/80 mb-6 flex-wrap gap-4">
+        <div class="flex items-center gap-4">
+            <img src="assets/brand-mark.png" alt="Знак на автора" class="brand-mark" decoding="async">
+            <div id="timer-display" class="hidden font-mono text-xl font-bold text-slate-700 bg-slate-100 px-4 py-2 rounded-lg flex items-center gap-2 border border-slate-200 shadow-inner">
+                ⏱ <span id="timer-text">00:00</span>
+            </div>
+            <div class="text-sm font-medium text-slate-600 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-100">
+                Решени: <span id="stat-solved" class="text-emerald-700 font-bold text-lg">0</span> <span id="stat-target" class="text-slate-400"></span>
+            </div>
+            <div class="text-sm font-medium text-slate-600 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
+                Точки: <span id="stat-points" class="text-blue-700 font-bold text-lg">0</span>
+            </div>
+            <div class="text-sm font-medium text-slate-600 bg-amber-50 px-4 py-2 rounded-lg border border-amber-100" title="Поредни верни отговори">
+                Серия: <span id="stat-streak" class="text-amber-700 font-bold text-lg">0</span> 🔥
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="openCalc()" class="bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium px-4 py-2 rounded-lg transition border border-slate-300 flex items-center gap-2 shadow-sm">🧮 Калкулатор</button>
+            <button onclick="openHelp()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium px-4 py-2 rounded-lg transition border border-blue-200 flex items-center gap-2 shadow-sm">📘 Справочник</button>
+            <button onclick="endGame()" class="bg-red-50 text-red-600 hover:bg-red-100 font-medium px-4 py-2 rounded-lg transition border border-red-200 flex items-center gap-2 shadow-sm">⏹ Приключи</button>
+        </div>
+    </div>
+
+    <div id="progress-wrap" class="hidden h-3 bg-slate-200 rounded-full mb-6 overflow-hidden shadow-inner" role="progressbar" aria-label="Напредък в тренировката" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style="width:0%"></div>
+    </div>
+
+    <div class="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl p-6 md:p-10 border border-white/80 relative">
+        <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                <span class="bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-lg text-lg border border-emerald-200 shadow-sm">Задача <span id="task-number">1</span></span>
+            </h2>
+            <div class="text-right bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
+                <div id="current-difficulty" class="inline-block mb-2 text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Лесно ниво</div>
+                <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Възможни точки</div>
+                <div class="text-3xl font-extrabold text-emerald-600" id="current-task-points">6</div>
+            </div>
+        </div>
+
+        <div id="task-text" class="text-2xl text-slate-800 leading-relaxed mb-8 font-medium">Зареждане на задача...</div>
+
+        <!-- Жокер -->
+        <div class="mb-8 flex flex-col items-start gap-4">
+            <button id="joker-btn" onclick="useJoker()" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 font-bold px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm focus:ring-4 focus:ring-amber-200">
+                💡 <span id="joker-btn-text">Интерактивна подсказка</span> <span class="bg-amber-200 text-amber-900 text-sm px-2 py-0.5 rounded font-bold">-2 т.</span>
+            </button>
+            <div id="joker-container" class="hidden w-full bg-slate-50 p-6 rounded-2xl border-2 border-slate-200 fade-in shadow-inner"></div>
+        </div>
+
+        <!-- Стъпки -->
+        <div class="space-y-6">
+            <div id="step-1" class="transition-all bg-white">
+                <h3 class="text-sm font-bold text-slate-400 tracking-wider mb-4 uppercase flex items-center gap-2"><span class="bg-slate-200 text-slate-600 w-6 h-6 rounded-full flex items-center justify-center">1</span> Избери модел</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="model-buttons">
+                    <button class="model-btn bg-white border-2 border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 font-bold py-4 px-2 rounded-xl transition shadow-sm text-lg" onclick="checkModel('add', this)">Събиране</button>
+                    <button class="model-btn bg-white border-2 border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 font-bold py-4 px-2 rounded-xl transition shadow-sm text-lg" onclick="checkModel('mul', this)">Умножение</button>
+                    <button class="model-btn bg-white border-2 border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 font-bold py-4 px-2 rounded-xl transition shadow-sm text-lg" onclick="checkModel('perm', this)">Пермутация</button>
+                    <button class="model-btn bg-white border-2 border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 font-bold py-4 px-2 rounded-xl transition shadow-sm text-lg" onclick="checkModel('var', this)">Вариация</button>
+                    <button class="model-btn bg-white border-2 border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 font-bold py-4 px-2 rounded-xl transition shadow-sm text-lg" onclick="checkModel('comb', this)">Комбинация</button>
+                </div>
+                <div id="fb-step-1" class="mt-4 font-medium text-lg min-h-[1.5rem]"></div>
+            </div>
+
+            <div id="steps-2-3-container" class="hidden space-y-6 fade-in">
+                <div id="step-2" class="bg-slate-50 p-6 rounded-2xl border-2 border-slate-200 shadow-sm relative">
+                    <div class="absolute -top-3 left-4 bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full border border-blue-200 shadow-sm">ОПЦИОНАЛНО</div>
+                    <h3 class="text-sm font-bold text-slate-500 tracking-wider mb-4 uppercase flex items-center gap-2 mt-2"><span class="bg-slate-300 text-slate-700 w-6 h-6 rounded-full flex items-center justify-center">2</span> Запиши израза</h3>
+                    <div id="expr-builder" class="flex flex-wrap items-center gap-3 text-2xl font-bold justify-center mb-6 text-slate-800"></div>
+                    <div class="text-center">
+                        <button id="expr-btn" onclick="checkExpression()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow focus:ring-4 focus:ring-blue-300 text-lg">Потвърди израза</button>
+                    </div>
+                    <div id="fb-step-2" class="mt-4 font-medium text-center text-lg min-h-[1.5rem]"></div>
+                </div>
+
+                <div id="step-3" class="bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-200 shadow-sm">
+                    <div id="direct-answer-note" class="hidden mb-5 bg-violet-50 border border-violet-200 text-violet-800 rounded-xl p-3 text-center font-bold">Съставна задача: използвай необходимите модели и въведи направо крайния отговор.</div>
+                    <h3 class="text-sm font-bold text-emerald-700 tracking-wider mb-4 uppercase flex justify-center items-center gap-2"><span id="final-step-number" class="bg-emerald-200 text-emerald-800 w-6 h-6 rounded-full flex items-center justify-center">3</span> <span id="final-step-label">Краен резултат</span></h3>
+                    <div class="flex justify-center items-center gap-4 mb-6">
+                        <span class="text-2xl font-bold text-slate-800">Отговор:</span>
+                        <input type="number" id="final-ans" class="math-input-large text-2xl" placeholder="0" aria-label="Краен числов отговор" onkeydown="if(event.key === 'Enter') checkFinalAnswer()">
+                    </div>
+                    <div class="text-center">
+                        <button id="final-btn" onclick="checkFinalAnswer()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 px-10 rounded-xl transition shadow-xl text-xl focus:ring-4 focus:ring-emerald-300">Провери резултата</button>
+                    </div>
+                    <div id="fb-step-3" class="mt-6 text-center text-xl"></div>
+                    
+                    <div class="mt-8 border-t-2 border-emerald-200/60 pt-6">
+                        <label class="block text-sm font-bold text-emerald-700 mb-2 uppercase tracking-wide">Място за пресмятания (чернова):</label>
+                        <textarea class="w-full bg-white border-2 border-emerald-200 rounded-xl p-4 text-slate-800 font-mono text-lg focus:ring-4 focus:ring-emerald-100 outline-none resize-y" rows="2" placeholder="Напр. 8 * 7 = ..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Динамичен бутон за следваща задача / пропускане -->
+        <div class="mt-10 text-center border-t-2 border-slate-100 pt-8" id="dynamic-next-container">
+            <button id="dynamic-next-btn" onclick="skipTask()" class="w-full md:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-2xl transition shadow-sm text-lg flex items-center justify-center gap-2 mx-auto">
+                ⏭️ Пропусни задачата
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- ФИНАЛЕН ЕКРАН -->
+<div id="end-screen" class="hidden max-w-3xl mx-auto w-full my-8 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-10 border border-white/80 fade-in text-center flex-grow">
+    <img src="assets/geo-assistant.png" alt="Гео поздравява ученика" class="geo-assistant geo-assistant-end mb-4" decoding="async">
+    <h2 class="text-4xl font-extrabold text-slate-800 mb-4">Тренировката приключи</h2>
+    <p id="end-feedback" class="text-xl font-bold text-slate-600 mb-10 pb-8 border-b-2 border-slate-100"></p>
+    
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+        <div class="bg-slate-50 p-6 rounded-2xl border-2 border-slate-200">
+            <div class="text-sm text-slate-500 font-bold uppercase tracking-wider mb-2">Завършени</div>
+            <div class="text-4xl font-extrabold text-slate-800" id="end-tasks">0</div>
+        </div>
+        <div class="bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-200">
+            <div class="text-sm text-emerald-600 font-bold uppercase tracking-wider mb-2">Успеваемост</div>
+            <div class="text-4xl font-extrabold text-emerald-700" id="end-perc">0%</div>
+        </div>
+        <div class="bg-blue-50 p-6 rounded-2xl border-2 border-blue-200">
+            <div class="text-sm text-blue-600 font-bold uppercase tracking-wider mb-2">Точки</div>
+            <div class="text-4xl font-extrabold text-blue-700"><span id="end-points">0</span></div>
+            <div class="text-sm font-bold text-blue-500 mt-1">от <span id="end-max">0</span></div>
+        </div>
+        <div class="bg-slate-50 p-6 rounded-2xl border-2 border-slate-200">
+            <div class="text-sm text-slate-500 font-bold uppercase tracking-wider mb-2">Време</div>
+            <div class="text-3xl font-extrabold text-slate-800 mt-2" id="end-time">0:00</div>
+        </div>
+    </div>
+    
+    <div class="flex justify-center gap-10 mb-10 text-lg font-medium text-slate-500 bg-slate-50 py-4 rounded-xl border border-slate-100">
+        <div>💡 Използвани жокери: <span id="end-jokers" class="text-slate-800 font-bold">0</span></div>
+        <div>🧮 Калкулатор: <span id="end-calc" class="text-slate-800 font-bold">0</span> пъти</div>
+    </div>
+    
+    <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-900 text-white font-extrabold py-4 px-12 rounded-2xl transition shadow-xl text-xl hover:-translate-y-1">Започни нова тренировка</button>
+</div>
+
+<!-- Модален: Справочник -->
+<div id="help-modal" class="fixed inset-0 hidden flex items-center justify-center z-50 bg-slate-900/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="help-title" onclick="closeOnOutsideClick(event, 'help-modal')">
+    <div class="bg-white p-6 md:p-10 rounded-3xl shadow-2xl max-w-3xl w-full relative max-h-[90vh] overflow-y-auto m-4 border border-slate-200">
+        <button data-modal-close onclick="closeModal('help-modal')" aria-label="Затвори справочника" class="absolute top-6 right-6 text-slate-400 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 w-10 h-10 rounded-full font-bold text-2xl transition flex items-center justify-center">&times;</button>
+        <h2 id="help-title" class="text-3xl font-extrabold text-slate-800 mb-8 border-b-2 border-slate-100 pb-6">Как да избера модел?</h2>
+        
+        <div class="space-y-5">
+            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow transition">
+                <h3 class="font-extrabold text-slate-800 text-xl mb-2 flex items-center gap-2"><span class="text-emerald-500">➕</span> Правило за събиране</h3>
+                <p class="text-slate-700 mb-3 text-lg">Когато избираме <b>една възможност</b> от няколко отделни групи. Потърси идеята <b class="bg-amber-100 text-amber-900 px-2 rounded">„ИЛИ“</b>.</p>
+                <div class="text-lg font-mono text-slate-800 bg-white p-3 rounded-lg border border-slate-200 shadow-inner">Формула: <i>n</i> + <i>k</i></div>
+            </div>
+            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow transition">
+                <h3 class="font-extrabold text-slate-800 text-xl mb-2 flex items-center gap-2"><span class="text-blue-500">✖️</span> Правило за умножение</h3>
+                <p class="text-slate-700 mb-3 text-lg">Когато изборът става на <b>последователни стъпки</b>. Потърси идеята <b class="bg-blue-100 text-blue-900 px-2 rounded">„И“</b>.</p>
+                <div class="text-lg font-mono text-slate-800 bg-white p-3 rounded-lg border border-slate-200 shadow-inner">Формула: <i>n</i> · <i>k</i></div>
+            </div>
+            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow transition">
+                <h3 class="font-extrabold text-slate-800 text-xl mb-2 flex items-center gap-2"><span class="text-purple-500">🔄</span> Пермутация</h3>
+                <p class="text-slate-700 mb-3 text-lg">Когато <b>подреждаме всички</b> дадени елементи на определени позиции.</p>
+                <div class="text-lg font-mono text-slate-800 bg-white p-3 rounded-lg border border-slate-200 shadow-inner">Формула: <i>P</i><sub>n</sub> = <i>n</i>!</div>
+                <p class="mt-2 text-sm text-slate-600">Еквивалентно: <i>n</i> · (<i>n</i>−1) · … · 2 · 1.</p>
+            </div>
+            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow transition">
+                <h3 class="font-extrabold text-slate-800 text-xl mb-2 flex items-center gap-2"><span class="text-rose-500">👑</span> Вариация без повторение</h3>
+                <p class="text-slate-700 mb-3 text-lg">Когато избираме <b>част</b> от елементите и <b class="text-rose-600">редът (или ролята) има значение</b>.</p>
+                <div class="text-lg font-mono text-slate-800 bg-white p-3 rounded-lg border border-slate-200 shadow-inner">Формула: <i>V</i><sub>n</sub><sup>k</sup> = <i>n</i> · (<i>n</i>−1) · … · (<i>n</i>−<i>k</i>+1)</div>
+            </div>
+            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow transition">
+                <h3 class="font-extrabold text-slate-800 text-xl mb-2 flex items-center gap-2"><span class="text-indigo-500">🤝</span> Комбинация без повторение</h3>
+                <p class="text-slate-700 mb-3 text-lg">Когато избираме <b>група/екип</b> и <b class="text-indigo-600">редът няма значение</b>.</p>
+                <div class="text-lg font-mono text-slate-800 bg-white p-3 rounded-lg border border-slate-200 shadow-inner">Формула: <i>C</i><sub>n</sub><sup>k</sup> = <i>n</i>! / [<i>k</i>!(<i>n</i>−<i>k</i>)!]</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модален: Калкулатор -->
+<div id="calc-modal" class="fixed inset-0 hidden flex items-center justify-center z-50 bg-slate-900/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="calc-title" onclick="closeOnOutsideClick(event, 'calc-modal')">
+    <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl w-80 md:w-96 relative m-4 border-2 border-slate-700">
+        <button data-modal-close onclick="closeModal('calc-modal')" aria-label="Затвори калкулатора" class="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 w-10 h-10 rounded-full font-bold text-2xl transition flex items-center justify-center">&times;</button>
+        <h2 id="calc-title" class="text-white text-xl font-bold mb-6">🧮 Калкулатор</h2>
+        <div id="calc-display" class="bg-slate-900 text-right text-4xl text-emerald-400 p-5 rounded-2xl mb-6 font-mono overflow-x-auto border-2 border-slate-950 shadow-inner min-h-[5rem] flex items-center justify-end tracking-wider">0</div>
+        <div class="grid grid-cols-4 gap-3">
+            <button class="bg-red-600 hover:bg-red-500 text-white font-bold text-xl py-3 rounded-xl transition shadow" onclick="calcClear()">C</button>
+            <button aria-label="Отваряща скоба" class="bg-violet-600 hover:bg-violet-500 text-white font-bold text-2xl py-3 rounded-xl transition shadow" onclick="calcParen('(')">(</button>
+            <button aria-label="Затваряща скоба" class="bg-violet-600 hover:bg-violet-500 text-white font-bold text-2xl py-3 rounded-xl transition shadow" onclick="calcParen(')')">)</button>
+            <button aria-label="Изтрий последния знак" class="bg-slate-500 hover:bg-slate-400 text-white font-bold text-xl py-3 rounded-xl transition shadow" onclick="calcBackspace()">⌫</button>
+
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('7')">7</button>
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('8')">8</button>
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('9')">9</button>
+            <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-2xl py-4 rounded-xl transition shadow" onclick="calcOp('/')">÷</button>
+            
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('4')">4</button>
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('5')">5</button>
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('6')">6</button>
+            <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-2xl py-4 rounded-xl transition shadow" onclick="calcOp('*')">×</button>
+            
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('1')">1</button>
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('2')">2</button>
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcInput('3')">3</button>
+            <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-2xl py-4 rounded-xl transition shadow" onclick="calcOp('-')">−</button>
+            
+            <button class="bg-slate-600 hover:bg-slate-500 text-white font-bold text-xl py-4 rounded-xl transition shadow col-span-2" onclick="calcInput('0')">0</button>
+            <button class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xl py-4 rounded-xl transition shadow" onclick="calcFact()">!</button>
+            <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-2xl py-4 rounded-xl transition shadow" onclick="calcOp('+')">+</button>
+            
+            <button class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-3xl py-4 rounded-xl col-span-4 mt-2 transition shadow-lg" onclick="calcEq()">=</button>
+        </div>
+    </div>
+</div>
+
+<footer class="mt-auto py-8 px-5 text-center text-sm text-slate-600 border-t border-white/70 bg-white/75 backdrop-blur-md">
+    <img src="assets/brand-mark.png" alt="" class="w-8 h-8 object-contain mx-auto mb-3 opacity-60" aria-hidden="true" decoding="async">
+    <p class="font-bold text-slate-800">© 2026 Валя Витковска</p>
+    <p class="mt-1">Автор и педагогически дизайнер на ресурса: Валя Витковска.</p>
+    <p class="mt-1">Съдържанието, задачите, методическата структура, редакцията и окончателната проверка са авторски.</p>
+    <p class="mt-2 text-xs opacity-80">Дигиталният ресурс е разработен с подкрепата на AI инструменти под авторски контрол. AI е използван като технически и творчески помощник, а не като самостоятелен автор.</p>
+</footer>
+
+<script>
+const typesMap = { 'add': 'Правило за събиране', 'mul': 'Правило за умножение', 'perm': 'Пермутация', 'var': 'Вариация', 'comb': 'Комбинация' };
+const directAnswerHardIds = new Set(['a6','a7','a8','a14','a15','m6','m7','m8','m9','m10','p9','v6','v7','v8','v14','v15','c6','c7','c9']);
+
+// РАЗШИРЕНА И СПЕЦИФИЧНА БАЗА ДАННИ ОТ ИЗОБРАЖЕНИЯ (предотвратява нелогични предмети)
+const visualDB = {
+    add: {
+        foods1: ['🥪','🍔','🌭','🍕','🌮'], fruits: ['🍎','🍐','🍊','🍋','🍌','🍉','🍇'],
+        shoes1: ['👟','🥾','⛸️'], shoes2: ['👞','🥿','👡','👢'],
+        sports1: ['🏃','🏊','🏋️'], sports2: ['⚽','🏀','🏐'],
+        books1: ['🛸','🚀','🤖'], books2: ['🕵️','🔍'],
+        letters: ['А','Б','В','Г','Д','Е','Ж'],
+        ballsW: ['⚪'], ballsR: ['🔴'],
+        students: ['👦','👧','👨‍🎓','👩‍🎓']
+    },
+    mul: {
+        foods: ['🍲','🍛','🍜'], desserts: ['🍰','🧁','🍦'],
+        cities: ['🏙️','🏘️','⛺'],
+        tops: ['👕','👚','🦺'], skirts: [
+            '<span class="skirt-icon" style="--skirt:#db2777" role="img" aria-label="розова пола"></span>',
+            '<span class="skirt-icon" style="--skirt:#7c3aed" role="img" aria-label="лилава пола"></span>',
+            '<span class="skirt-icon" style="--skirt:#0f766e" role="img" aria-label="зелена пола"></span>',
+            '<span class="skirt-icon" style="--skirt:#dc2626" role="img" aria-label="червена пола"></span>'
+        ],
+        dice: ['🎲'], cards: ['🃏','🎴'],
+        teachers: ['👨‍🏫','👩‍🏫'], students: ['👦','👧'],
+        books: ['📕','📗','📘'],
+        people: ['👨‍🦱','👩‍🦰','👱‍♂️','👩‍🦱'],
+        ballsW: ['⚪'], ballsR: ['🔴']
+    },
+    perm: {
+        books: ['📕','📗','📘','📙','📓','📔','📒'],
+        people: ['👨‍🦱','👩‍🦰','👱‍♂️','👩‍🦱','🧔','👱‍♀️'],
+        letters: ['А','Б','В','Г','Д','Е','Ж'],
+        runners: ['🏃','🏃‍♂️','🏃‍♀️'],
+        subjects: ['📐','🧬','💻','🔬','📚'],
+        paintings: ['🖼️','🎨'],
+        students: ['👦','👧','👨‍🎓','👩‍🎓'],
+        cars: ['🚗','🚕','🚙','🚌']
+    },
+    var: {
+        people: ['👨‍🦱','👩‍🦰','👱‍♂️','👩‍🦱','🧔','👱‍♀️'],
+        medals: ['🥇','🥈','🥉','🏅'],
+        pins: ['🔢','🔒','🔑'],
+        colors: ['🔴','🔵','🟢','🟡','🟣','🟠'],
+        books: ['📕','📗','📘','📙'],
+        math: ['✖️','➕','➖','➗']
+    },
+    comb: {
+        students: ['👦','👧','👨‍🎓','👩‍🎓'],
+        fruits: ['🍎','🍐','🍊','🍋','🍌'],
+        cards: ['🃏','🎴','♠️','♣️','♥️','♦️'],
+        people: ['👨‍🦱','👩‍🦰','👱‍♂️','👩‍🦱'],
+        lotto: ['🎱','🎟️'],
+        lines: ['📏','✏️'],
+        points: ['⏺','📍'],
+        exam: ['📝','📄','📃']
+    }
+};
+
+function fact(num) { if (num <= 1) return 1; return num * fact(num - 1); }
+function calcC(n, k) { return fact(n) / (fact(k) * fact(n - k)); }
+function calcV(n, k) { return fact(n) / fact(n - k); }
+
+// 75 ясно разграничени шаблона: по 5 за всяко ниво във всеки от петте модела.
+const db = {
+    add: [
+        { id: "a1", diff: ['easy'], tpl: "В училищния бюфет се предлагат {n} вида сандвичи и {k} вида плодове. Ученикът избира точно един продукт — сандвич или плод. Колко различни избора има?", nR: [3, 8], kR: [3, 8], vGroup: 'foods1', vGroup2: 'fruits' },
+        { id: "a2", diff: ['easy'], tpl: "В магазин се предлагат {n} модела маратонки и {k} модела официални обувки. Иван иска да си купи само един чифт. Колко избора има?", nR: [4, 10], kR: [2, 6], vGroup: 'shoes1', vGroup2: 'shoes2' },
+        { id: "a3", diff: ['easy'], tpl: "За спортен празник ученик избира да се запише или на един от {n} индивидуални спорта, или на един от {k} отборни. Колко варианта има?", nR: [3, 7], kR: [2, 5], vGroup: 'sports1', vGroup2: 'sports2' },
+        { id: "a9", diff: ['easy'], tpl: "Сладоледена витрина предлага {n} плодови и {k} шоколадови вкуса. Клиент избира точно един вкус. Колко избора има?", nR: [3, 7], kR: [2, 6], vGroup: 'fruits', vGroup2: 'foods1' },
+        { id: "a10", diff: ['easy'], tpl: "До музея може да се пътува по {n} автобусни и {k} трамвайни линии. Ученикът избира точно една от тях. Колко различни избора има?", nR: [2, 6], kR: [2, 5], vGroup: 'letters', vGroup2: 'letters' },
+        { id: "a4", diff: ['medium'], tpl: "Библиотека разполага с {n} фантастични романа и {k} криминални. Читател има право да вземе точно една книга за уикенда. По колко начина може да избере?", nR: [10, 20], kR: [8, 15], vGroup: 'books1', vGroup2: 'books2' },
+        { id: "a5", diff: ['medium'], tpl: "На изпит студентът изтегля точно един въпрос измежду {n} въпроса по алгебра и {k} въпроса по геометрия. Колко различни въпроса може да изтегли?", nR: [10, 25], kR: [10, 20], vGroup: 'letters', vGroup2: 'letters' },
+        { id: "a11", diff: ['medium'], tpl: "Ученик избира една книга за проект измежду {n} научнопопулярни и {k} исторически заглавия. Колко различни избора има?", nR: [8, 18], kR: [7, 16], vGroup: 'books1', vGroup2: 'books2' },
+        { id: "a12", diff: ['medium'], tpl: "За ден на науката са обявени {n} работилници по математика и {k} по природни науки. Участник посещава точно една работилница. Колко възможности има?", nR: [6, 12], kR: [5, 11], vGroup: 'students', vGroup2: 'students' },
+        { id: "a13", diff: ['medium'], tpl: "Код започва или с една от {n} разрешени букви, или с една от {k} разрешени цифри. Колко различни първи знака са възможни?", nR: [8, 16], kR: [5, 10], vGroup: 'letters', vGroup2: 'letters' },
+        { id: "a6", diff: ['hard'], tpl: "От {n} момчета и {k} момичета трябва да се избере екип от двама души от един и същи пол. По колко начина може да стане това?", nR: [6, 10], kR: [6, 10], vGroup: 'students', vGroup2: 'students', terms: (n,k)=>[calcC(n,2),calcC(k,2)] },
+        { id: "a7", diff: ['hard'], tpl: "В урна има {n} бели и {k} червени номерирани топки. Едновременно се изваждат 4 топки, които трябва да бъдат от един и същи цвят. Колко различни изваждания са възможни?", nR: [6, 10], kR: [6, 10], vGroup: 'ballsW', vGroup2: 'ballsR', terms: (n,k)=>[calcC(n,4),calcC(k,4)] },
+        { id: "a8", diff: ['hard'], tpl: "За контролна работа има {n} задачи по алгебра и {k} по геометрия. Трябва да се изберат или 3 алгебрични и 2 геометрични, или 2 алгебрични и 3 геометрични задачи. Колко различни варианта има?", nR: [6, 10], kR: [6, 10], vGroup: 'letters', vGroup2: 'letters', terms: (n,k)=>[calcC(n,3)*calcC(k,2),calcC(n,2)*calcC(k,3)] },
+        { id: "a14", diff: ['hard'], tpl: "За състезание от {n} ученици може да се сформира отбор от 2, 3 ИЛИ 4 ученици. Колко различни отбора са възможни?", nR: [6, 9], vGroup: 'students', terms: (n,k)=>[calcC(n,2),calcC(n,3),calcC(n,4)] },
+        { id: "a15", diff: ['hard'], textFn: (n,k)=>`С цифрите от 0 до ${n} се образуват четирицифрени числа с различни цифри. Колко от тях се делят на 5?`, nR: [6, 9], vGroup: 'letters', terms: (n,k)=>[n*(n-1)*(n-2),(n-1)*(n-1)*(n-2)] }
+    ],
+    mul: [
+        { id: "m1", diff: ['easy'], tpl: "За обяд се предлагат {n} основни ястия и {k} десерта. Едно меню съдържа едно основно ястие и един десерт. Колко различни менюта могат да се съставят?", nR: [3, 6], kR: [2, 5], vGroup: 'foods', vGroup2: 'desserts' },
+        { id: "m2", diff: ['easy'], tpl: "От град А до Б има {n} пътя, а от Б до В има {k} пътя. По колко различни маршрута може да се стигне от А до В през Б?", nR: [3, 6], kR: [2, 4], vGroup: 'cities', vGroup2: 'cities' },
+        { id: "m3", diff: ['easy'], tpl: "Мила има {n} различни блузи и {k} различни поли. По колко начина може да съчетае блуза с пола?", nR: [4, 8], kR: [3, 6], vGroup: 'tops', vGroup2: 'skirts' },
+        { id: "m11", diff: ['easy'], tpl: "За училище има {n} вида тетрадки и {k} вида химикалки. Колко комплекта от една тетрадка и една химикалка могат да се изберат?", nR: [3, 7], kR: [3, 8], vGroup: 'books', vGroup2: 'cards' },
+        { id: "m12", diff: ['easy'], tpl: "Пътуването включва избор на един от {n} автобусни маршрута и след това на един от {k} влака. Колко различни пътувания са възможни?", nR: [2, 5], kR: [2, 6], vGroup: 'cities', vGroup2: 'cities' },
+        { id: "m4", diff: ['medium'], tpl: "Хвърля се стандартен шестстенен зар и се изтегля една карта от тесте с {k} различни карти. Колко различни съставни резултата са възможни?", nFix: 6, kR: [4, 10], vGroup: 'dice', vGroup2: 'cards' },
+        { id: "m5", diff: ['medium'], tpl: "Избираме един главен координатор от {n} учители и един помощник от {k} ученици. Колко различни екипа могат да се сформират?", nR: [5, 12], kR: [10, 20], vGroup: 'teachers', vGroup2: 'students' },
+        { id: "m13", diff: ['medium'], tpl: "Сладолед се съставя от един от {n} вкуса, един от {k} размера и една от 3 поръски. Колко различни сладоледа могат да се поръчат?", nR: [4, 8], kR: [2, 4], vGroup: 'desserts', vGroup2: 'foods', terms: (n,k)=>[n,k,3] },
+        { id: "m14", diff: ['medium'], tpl: "Регистрационен код се състои последователно от две букви и три цифри. За всяка буквена позиция може да се използва една от {n} допустими букви, а за всяка цифрова позиция — една от {k} допустими цифри. Повторенията са разрешени. Колко различни кода могат да се образуват?", nR: [3, 8], kR: [4, 10], vGroup: 'cards', vGroup2: 'cards', terms: (n,k)=>[n,n,k,k,k] },
+        { id: "m15", diff: ['medium'], tpl: "Тоалет се състои от една от {n} блузи, една от {k} поли и един от 3 чифта обувки. Колко различни тоалета могат да се съставят?", nR: [3, 7], kR: [2, 6], vGroup: 'tops', vGroup2: 'skirts', terms: (n,k)=>[n,k,3] },
+        { id: "m6", diff: ['hard'], tpl: "На рафт се подреждат {n} различни книги. По колко начина могат да бъдат подредени, ако {k} предварително определени книги трябва да бъдат една до друга?", nR: [5, 7], kR: [2, 3], vGroup: 'books', vGroup2: 'books', val1: (n,k)=>fact(n-k+1), val2: (n,k)=>fact(k) },
+        { id: "m7", diff: ['hard'], tpl: "За обща снимка {n} момичета сядат на първия ред, а {k} момчета се подреждат прави зад тях. По колко различни начина може да стане това?", nR: [3, 4], kR: [3, 4], vGroup: 'people', vGroup2: 'people', val1: (n,k)=>fact(n), val2: (n,k)=>fact(k) },
+        { id: "m8", diff: ['hard'], tpl: "Учител е подбрал {n} задачи по алгебра и {k} по геометрия. За контролна работа избира точно 3 алгебрични и 2 геометрични задачи. Колко варианта може да състави?", nR: [7, 12], kR: [6, 10], vGroup: 'books', vGroup2: 'books', terms: (n,k)=>[calcC(n,3),calcC(k,2)] },
+        { id: "m9", diff: ['hard'], tpl: "От група с {n} мъже и {k} жени се избира комисия от точно 2 мъже и 3 жени. Колко различни комисии са възможни?", nR: [6, 10], kR: [6, 10], vGroup: 'people', vGroup2: 'people', terms: (n,k)=>[calcC(n,2),calcC(k,3)] },
+        { id: "m10", diff: ['hard'], tpl: "Комисия избира председател, заместник-председател и секретар измежду {n} мъже и {k} жени. Точно една от трите длъжности трябва да бъде заета от жена. По колко начина може да стане това?", nR: [6, 10], kR: [4, 8], vGroup: 'people', vGroup2: 'people', terms: (n,k)=>[3,k,n,n-1] }
+    ],
+    perm: [
+        { id: "p1", diff: ['easy'], tpl: "По колко начина могат да се подредят {n} различни книги една до друга на рафт?", nR: [3, 6], vGroup: 'books' },
+        { id: "p2", diff: ['easy'], tpl: "{n} приятели искат да седнат на пейка с {n} места. Колко са възможните подредби?", nR: [4, 6], vGroup: 'people' },
+        { id: "p3", diff: ['easy'], tpl: "Дадена дума е съставена от {n} различни букви. Колко различни буквени низа могат да се получат чрез разместване на всички букви?", nR: [4, 6], vGroup: 'letters' },
+        { id: "p10", diff: ['easy'], tpl: "На табло трябва да се подредят в редица {n} различни снимки. Колко подредби са възможни?", nR: [3, 6], vGroup: 'paintings' },
+        { id: "p11", diff: ['easy'], tpl: "Пред училището трябва да се наредят {n} различни знамена. По колко начина може да стане това?", nR: [3, 6], vGroup: 'subjects' },
+        { id: "p4", diff: ['medium'], tpl: "В състезание участват {n} бегачи. По колко различни начина могат да се подредят в крайното класиране, ако няма равни резултати?", nR: [5, 7], vGroup: 'runners' },
+        { id: "p5", diff: ['medium'], tpl: "Дневната програма се състои от {n} различни учебни предмета. Колко различни програми могат да се съставят за този ден?", nR: [5, 7], vGroup: 'subjects' },
+        { id: "p6", diff: ['medium'], tpl: "По колко начина могат да се подредят в редица {n} различни картини на стената на галерия?", nR: [6, 8], vGroup: 'paintings' },
+        { id: "p12", diff: ['medium'], tpl: "В редица се подреждат {n} ученици. Колко подредби са възможни, ако един определен ученик трябва да бъде на първо място?", nR: [5, 8], vGroup: 'students', val1: (n,k)=>n-1 },
+        { id: "p13", diff: ['medium'], tpl: "На рафт се подреждат {n} различни книги, като речникът трябва да остане най-вляво. По колко начина могат да се подредят книгите?", nR: [5, 8], vGroup: 'books', val1: (n,k)=>n-1 },
+        { id: "p7", diff: ['hard'], tpl: "Разместват се {n} различни букви. Две предварително определени букви трябва да останат съответно на първа и последна позиция. Колко различни думи могат да се получат?", nR: [7, 10], vGroup: 'letters', val1: (n,k)=>n-2 }, 
+        { id: "p8", diff: ['hard'], tpl: "Нечетен брой от {n} ученици се подреждат в редица за снимка. Един определен ученик трябва да бъде точно в средата. Колко подредби са възможни?", nR: [7, 11], vGroup: 'students', val1: (n,k)=>n-1, normalizeN: n=>n%2===0?n+1:n },
+        { id: "p9", diff: ['hard'], tpl: "На паркинг има {n} последователни места, на които се паркират {n} различни автомобила. Колко подредби са възможни, ако два определени автомобила трябва да бъдат на съседни места?", nR: [5, 7], vGroup: 'cars', val1: (n,k)=>n-1, val2: ()=>2, isMulToo: true },
+        { id: "p14", diff: ['hard'], tpl: "{n} души сядат около кръгла маса. Подредби, които се получават само чрез завъртане, се смятат за еднакви. Колко различни подредби има?", nR: [5, 8], vGroup: 'people', val1: (n,k)=>n-1 },
+        { id: "p15", diff: ['hard'], tpl: "В редица се подреждат {n} състезатели. Един определен трябва да е първи, а друг определен - последен. Колко подредби са възможни?", nR: [7, 10], vGroup: 'runners', val1: (n,k)=>n-2 }
+    ],
+    var: [
+        { id: "v1", diff: ['easy'], tpl: "От {n} ученици се избират председател и заместник-председател, като един ученик не може да заема и двете длъжности. По колко начина може да стане изборът?", nR: [5, 10], kFix: 2, vGroup: 'people' },
+        { id: "v2", diff: ['easy'], tpl: "В турнир участват {n} отбора. По колко начина могат да се разпределят златният, сребърният и бронзовият медал?", nR: [6, 12], kFix: 3, vGroup: 'medals' },
+        { id: "v3", diff: ['easy'], tpl: "Колко ПИН кода с дължина {k} могат да се съставят от {n} допустими цифри, ако цифрите в един код не се повтарят?", nR: [7, 10], kR: [3, 4], vGroup: 'pins' },
+        { id: "v9", diff: ['easy'], tpl: "От {n} ученици се избират {k}, които да заемат {k} различни номерирани места на сцената. Колко разпределения са възможни?", nR: [6, 10], kR: [2, 4], vGroup: 'people' },
+        { id: "v10", diff: ['easy'], tpl: "От азбука с {n} различни символа се съставят кодове с дължина {k}, без повторение на символ. Колко кода има?", nR: [6, 10], kR: [2, 4], vGroup: 'pins' },
+        { id: "v4", diff: ['medium'], tpl: "Знаме се състои от {k} хоризонтални ивици в различни цветове. Ако са налични {n} цвята, колко различни знамена могат да се съставят?", nR: [5, 8], kR: [3, 4], vGroup: 'colors' },
+        { id: "v5", diff: ['medium'], tpl: "Дадени са {n} различни книги и {k} последователни места на витрина. По колко начина могат да се изберат и подредят {k} от книгите?", nR: [7, 10], kR: [3, 5], vGroup: 'books' },
+        { id: "v11", diff: ['medium'], tpl: "От {n} кандидати трябва да се изберат председател, секретар и касиер. Един човек не може да заема две длъжности. Колко избора има?", nR: [7, 12], kFix: 3, vGroup: 'people' },
+        { id: "v12", diff: ['medium'], tpl: "В състезание участват {n} финалисти. По колко начина могат да бъдат заети първите {k} места?", nR: [8, 12], kR: [3, 5], vGroup: 'medals' },
+        { id: "v13", diff: ['medium'], tpl: "За изложба се избират и подреждат в редица {k} от общо {n} различни картини. Колко експозиции са възможни?", nR: [7, 11], kR: [3, 5], vGroup: 'books' },
+        { id: "v6", diff: ['hard'], textFn: (n,k)=>`С цифрите от 0 до ${n} се образуват четирицифрени числа без повторение на цифра. Колко такива числа има?`, nR: [6, 9], kFix: 4, vGroup: 'pins', acceptedModels: ['var','mul'], answer: (n,k)=>n*n*(n-1)*(n-2), exprTerms: (n,k)=>[n,n,n-1,n-2], exprOp: '*' },
+        { id: "v7", diff: ['hard'], textFn: (n,k)=>`С цифрите от 0 до ${n} се образуват четирицифрени числа без повторение. Колко от тях са четни?`, nR: [6, 9], kFix: 4, vGroup: 'math', acceptedModels: ['var','mul'], answer: (n,k)=>n*(n-1)*(n-2)+Math.floor(n/2)*(n-1)*(n-1)*(n-2), exprTerms: (n,k)=>[n*(n-1)*(n-2),Math.floor(n/2)*(n-1)*(n-1)*(n-2)], exprOp: '+' },
+        { id: "v8", diff: ['hard'], tpl: "Код с дължина {k} се образува от {n} различни символа без повторение. Един предварително определен символ задължително участва в кода. Колко кода са възможни?", nR: [7, 10], kR: [3, 5], vGroup: 'medals', acceptedModels: ['var','mul'], answer: (n,k)=>k*calcV(n-1,k-1), exprTerms: (n,k)=>[k,calcV(n-1,k-1)], exprOp: '*' },
+        { id: "v14", diff: ['hard'], tpl: "В кинозала има {n} места в един ред. На тях сядат {k} определени приятели. Двама конкретни приятели не желаят да бъдат един до друг. По колко начина могат да седнат?", nR: [9, 13], kR: [4, 6], vGroup: 'pins', acceptedModels: ['var','mul'], answer: (n,k)=>calcV(n,k)-2*(n-1)*calcV(n-2,k-2), exprTerms: (n,k)=>[calcV(n,k),2*(n-1)*calcV(n-2,k-2)], exprOp: '-' },
+        { id: "v15", diff: ['hard'], tpl: "Знаме има {k} хоризонтални ивици в различни цветове, избрани от {n} налични цвята. Най-горната ивица трябва да бъде в един от два предварително определени цвята. Колко знамена са възможни?", nR: [7, 10], kR: [4, 5], vGroup: 'colors', acceptedModels: ['var','mul'], answer: (n,k)=>2*calcV(n-1,k-1), exprTerms: (n,k)=>[2,calcV(n-1,k-1)], exprOp: '*' }
+    ],
+    comb: [
+        { id: "c1", diff: ['easy'], tpl: "За дежурство трябва да се сформира екип от {k} ученици измежду {n} желаещи. По колко начина може да бъде съставен екипът?", nR: [5, 10], kR: [2, 3], vGroup: 'students' },
+        { id: "c2", diff: ['easy'], tpl: "В купа има {n} различни плода. За смути трябва да се изберат {k} различни плода. По колко начина може да стане това?", nR: [6, 9], kR: [3, 4], vGroup: 'fruits' },
+        { id: "c3", diff: ['easy'], tpl: "От тесте с {n} различни карти се избират едновременно {k} карти. Колко различни множества от {k} карти могат да се получат?", nR: [10, 15], kR: [3, 5], vGroup: 'cards' },
+        { id: "c10", diff: ['easy'], tpl: "От плейлист с {n} различни песни се подбират {k} песни за междучасието. Колко различни селекции са възможни?", nR: [6, 10], kR: [2, 4], vGroup: 'cards' },
+        { id: "c11", diff: ['easy'], tpl: "Пицария предлага {n} различни добавки. За една пица се подбират {k} различни добавки. Колко различни пици могат да се съставят?", nR: [6, 10], kR: [2, 4], vGroup: 'fruits' },
+        { id: "c4", diff: ['medium'], tpl: "От група от {n} туристи трябва да се сформира разузнавателен отряд от {k} души. По колко начина може да стане това?", nR: [8, 12], kR: [4, 5], vGroup: 'people' },
+        { id: "c5", diff: ['medium'], tpl: "В тото фишът съдържа {k} различни числа, избрани измежду числата от 1 до {n}. Колко различни фиша могат да се попълнят?", nR: [10, 15], kR: [4, 5], vGroup: 'lotto' },
+        { id: "c12", diff: ['medium'], tpl: "От {n} кандидати се избира жури от {k} равноправни членове. Колко различни състава са възможни?", nR: [9, 14], kR: [3, 5], vGroup: 'people' },
+        { id: "c13", diff: ['medium'], tpl: "В среща участват {n} души и всеки двама се ръкуват точно веднъж. Колко ръкостискания има?", nR: [7, 14], kFix: 2, vGroup: 'people' },
+        { id: "c14", diff: ['medium'], tpl: "Дадени са {n} точки, никои три от които не лежат на една права. Колко различни отсечки се определят от тях?", nR: [7, 14], kFix: 2, vGroup: 'lines' },
+        { id: "c6", diff: ['hard'], tpl: "Намерете броя на диагоналите на изпъкнал {n}-ъгълник.", nR: [9, 16], kFix: 2, vGroup: 'lines', answer: (n,k)=>calcC(n,2)-n, exprTerms: (n,k)=>[calcC(n,2),n], exprOp: '-' },
+        { id: "c7", diff: ['hard'], tpl: "Във футболен турнир участват {n} отбора. Всеки два отбора играят помежду си по два мача. Колко мача се провеждат общо?", nR: [8, 16], kFix: 2, vGroup: 'people', acceptedModels: ['comb','mul'], answer: (n,k)=>2*calcC(n,2), exprTerms: (n,k)=>[2,calcC(n,2)], exprOp: '*' },
+        { id: "c8", diff: ['hard'], tpl: "В изпъкнал {n}-ъгълник са прекарани всички диагонали. Никои три диагонала не се пресичат в една вътрешна точка. Колко вътрешни пресечни точки се получават?", nR: [7, 12], kFix: 4, vGroup: 'points' },
+        { id: "c9", diff: ['hard'], tpl: "В клас има две неприпокриващи се групи: {n} ученици изучават английски език, а {k} ученици — немски език. За среща се избират 6 ученици, точно 3 от всяка група. По колко начина може да стане изборът?", nR: [12, 20], kR: [5, 8], vGroup: 'exam', acceptedModels: ['comb','mul'], answer: (n,k)=>calcC(n,3)*calcC(k,3), exprTerms: (n,k)=>[calcC(n,3),calcC(k,3)], exprOp: '*' },
+        { id: "c15", diff: ['hard'], tpl: "Дадени са {n} точки в пространството, никои четири от които не лежат в една равнина. Колко равнини се определят от тези точки?", nR: [6, 10], kFix: 3, vGroup: 'points' }
+    ]
+};
+
+let flow = { allowedModels: [], difficulty: 'easy', taskCountTarget: 'infinite', step: 1, selectedModel: null };
+let selectedDifficulty = 'easy';
+let stats = { generatedTasks: 0, completedTasks: 0, correctTasks: 0, points: 0, maxPoints: 0, jokers: 0, calc: 0, streak: 0, bestStreak: 0 };
+let task = null;
+const pointsByDifficulty = { easy: 6, medium: 8, hard: 10 };
+let currentTaskMaxPoints = pointsByDifficulty.easy;
+let currentTaskPoints = currentTaskMaxPoints;
+let taskCompleted = false;
+let taskJokerUses = 0;
+let step2Skipped = false;
+let recentTemplates = [];
+
+let timerMode = 'none';
+let timeRemaining = 0;
+let timeSpent = 0;
+let timerInterval = null;
+
+let calcVal = '0', calcExpression = '', calcNew = true;
+let lastFocusedElement = null;
+
+// --- ИНИЦИАЛИЗАЦИЯ И СТАРТ ---
+function replayGuide() {
+    document.querySelectorAll('#guide-steps .guide-step').forEach((step, index) => {
+        step.style.animation = 'none';
+        void step.offsetWidth;
+        step.style.animation = 'guideReveal .6s ease-out forwards';
+        step.style.animationDelay = `${0.08 + index * 0.14}s`;
+    });
+}
+
+function selectDifficulty(level) {
+    if (!['easy', 'medium', 'hard'].includes(level)) return;
+    selectedDifficulty = level;
+    document.querySelectorAll('.diff-label').forEach(button => {
+        const active = button.dataset.difficulty === level;
+        button.classList.toggle('border-emerald-500', active);
+        button.classList.toggle('bg-emerald-50', active);
+        button.classList.toggle('text-emerald-800', active);
+        button.classList.toggle('shadow-sm', active);
+        button.classList.toggle('border-transparent', !active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        button.querySelector('span').classList.toggle('text-rose-700', active && level === 'hard');
+    });
+    const startButton = document.getElementById('start-game-btn');
+    const names = { easy: 'Лесно', medium: 'Средно', hard: 'Трудно' };
+    if (startButton) startButton.innerText = `Започни - ${names[level]} ниво`;
+}
+selectDifficulty('easy');
+
+function updateTimerInfo() {
+    let val = document.querySelector('input[name="timer"]:checked').value;
+    let info = document.getElementById('timer-info');
+    if (val === 'none') info.innerText = "Свободна тренировка без времево ограничение.";
+    else info.innerText = `След ${val} минути тренировката ще приключи автоматично.`;
+}
+updateTimerInfo(); 
+
+function startGame() {
+    let checkedModels = Array.from(document.querySelectorAll('.model-cb:checked')).map(cb => cb.value);
+    if(checkedModels.length === 0) return alert('Избери поне един модел!');
+    flow.allowedModels = checkedModels;
+    flow.difficulty = selectedDifficulty;
+    flow.taskCountTarget = document.querySelector('input[name="taskCount"]:checked').value;
+    updateDifficultyBadge();
+    
+    if (flow.taskCountTarget !== 'infinite') document.getElementById('stat-target').innerText = `от ${flow.taskCountTarget}`;
+    else document.getElementById('stat-target').innerText = '';
+    document.getElementById('progress-wrap').classList.toggle('hidden', flow.taskCountTarget === 'infinite');
+    updateProgress();
+    
+    let t = document.querySelector('input[name="timer"]:checked').value;
+    timerMode = t;
+    if(t !== 'none') {
+        timeRemaining = parseInt(t) * 60;
+        document.getElementById('timer-display').classList.remove('hidden');
+        updateTimerUI();
+        timerInterval = setInterval(tickTimer, 1000);
+    } else {
+        document.getElementById('timer-display').classList.add('hidden');
+        timeSpent = 0;
+        timerInterval = setInterval(() => { timeSpent++; }, 1000);
+    }
+    
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('app-container').classList.remove('hidden');
+    generateTask();
+}
+
+function tickTimer() {
+    if(timerMode !== 'none') {
+        timeRemaining--;
+        timeSpent++;
+        updateTimerUI();
+        if(timeRemaining <= 0) endGame();
+    }
+}
+
+function updateTimerUI() {
+    if(timerMode === 'none') return;
+    let m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+    let s = (timeRemaining % 60).toString().padStart(2, '0');
+    let display = document.getElementById('timer-text');
+    display.innerText = `${m}:${s}`;
+    if (timeRemaining <= 60) display.classList.add('text-red-600', 'animate-pulse');
+}
+
+// --- ГЕНЕРИРАНЕ НА ЗАДАЧИ ---
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function generateTask() {
+    stats.generatedTasks++;
+    document.getElementById('task-number').innerText = stats.generatedTasks;
+    taskCompleted = false;
+    currentTaskMaxPoints = pointsByDifficulty[flow.difficulty] || pointsByDifficulty.easy;
+    currentTaskPoints = currentTaskMaxPoints;
+    taskJokerUses = 0;
+    step2Skipped = false;
+    flow.step = 1;
+    flow.selectedModel = null;
+    
+    resetUI();
+    
+    // Общ пул от всички включени модели: не повтаря шаблон, преди пулът да се изчерпи.
+    let fullPool = flow.allowedModels.flatMap(type =>
+        db[type].filter(t => t.diff.includes(flow.difficulty)).map(obj => ({ type, obj }))
+    );
+    if (fullPool.length === 0) {
+        document.getElementById('task-text').innerText = `Няма налични задачи за ниво „${flow.difficulty}“ с избраните модели.`;
+        throw new Error(`No tasks for selected difficulty: ${flow.difficulty}`);
+    }
+    let availableTasks = fullPool.filter(entry => !recentTemplates.includes(entry.obj.id));
+    if (availableTasks.length === 0) {
+        recentTemplates = [];
+        availableTasks = fullPool;
+    }
+    let selectedEntry = availableTasks[rand(0, availableTasks.length - 1)];
+    let type = selectedEntry.type;
+    let obj = selectedEntry.obj;
+    if (!obj.diff.includes(flow.difficulty)) {
+        throw new Error(`Difficulty invariant failed: requested ${flow.difficulty}, received ${obj.diff.join(',')}`);
+    }
+    updateDifficultyBadge(obj.diff[0]);
+    document.getElementById('app-container').dataset.difficulty = obj.diff[0];
+    
+    recentTemplates.push(obj.id);
+    let memoryLimit = Math.max(1, fullPool.length - 1);
+    if(recentTemplates.length > memoryLimit) recentTemplates.shift();
+    
+    let n = obj.nFix ? obj.nFix : rand(obj.nR[0], obj.nR[1]);
+    if (obj.normalizeN) n = obj.normalizeN(n);
+    let k = null;
+    if (obj.kFix) k = obj.kFix;
+    else if (obj.kR) k = rand(obj.kR[0], obj.kR[1]);
+    
+    if (type === 'comb' || type === 'var') {
+        if(k >= n) { k = n - 2; if(k < 2) { k = 2; n = k + 2; } }
+    }
+    
+    let exp1 = obj.val1 ? obj.val1(n, k) : n;
+    let exp2 = obj.val2 ? obj.val2(n, k) : k;
+    let terms = obj.terms ? obj.terms(n, k) : [exp1, exp2];
+    let exprTerms = obj.exprTerms ? obj.exprTerms(n, k) : null;
+    
+    let ans = 0;
+    if (obj.answer) ans = obj.answer(n, k);
+    else if (obj.isMulToo) ans = fact(exp1) * exp2;
+    else if (type === 'add') ans = terms.reduce((sum, value) => sum + value, 0);
+    else if (type === 'mul') {
+        ans = terms.reduce((product, value) => product * value, 1);
+    }
+    else if (type === 'perm') ans = fact(exp1); 
+    else if (type === 'var') ans = calcV(n, k);
+    else if (type === 'comb') ans = calcC(n, k);
+    
+    let vArr1 = visualDB[type][obj.vGroup] ? [...visualDB[type][obj.vGroup]].sort(()=>Math.random()-0.5) : [];
+    let vArr2 = obj.vGroup2 && visualDB[type][obj.vGroup2] ? [...visualDB[type][obj.vGroup2]].sort(()=>Math.random()-0.5) : [];
+
+    let text = obj.textFn ? obj.textFn(n, k) : obj.tpl.replaceAll('{n}', n).replaceAll('{k}', k);
+    
+    task = { id: obj.id, type, difficulty: obj.diff[0], n, k, exp1, exp2, terms, exprTerms, exprOp: obj.exprOp || null, customAnswer: Boolean(obj.answer), acceptedModels: obj.acceptedModels || null, customTerms: Boolean(obj.terms), directAnswer: directAnswerHardIds.has(obj.id), ans, text, items1: vArr1, items2: vArr2, isHard: obj.diff.includes('hard'), special: obj.isMulToo ? obj.id : null };
+    
+    document.getElementById('task-text').innerHTML = text;
+    if (task.directAnswer) {
+        flow.step = 3;
+        document.getElementById('step-1').classList.add('hidden');
+        document.getElementById('steps-2-3-container').classList.remove('hidden');
+        document.getElementById('step-2').classList.add('hidden');
+        document.getElementById('direct-answer-note').classList.remove('hidden');
+        document.getElementById('final-step-number').innerText = '1';
+        document.getElementById('final-step-label').innerText = 'Въведи крайния отговор';
+        setTimeout(() => document.getElementById('final-ans').focus(), 0);
+    }
+    let card = document.getElementById('task-text').closest('.bg-white.rounded-3xl');
+    if (card) {
+        card.classList.remove('task-enter');
+        void card.offsetWidth;
+        card.classList.add('task-enter');
+    }
+    updatePointsUI();
+}
+
+function updateDifficultyBadge(level = flow.difficulty) {
+    const badge = document.getElementById('current-difficulty');
+    const config = {
+        easy: ['Лесно ниво', 'bg-emerald-100', 'text-emerald-800'],
+        medium: ['Средно ниво', 'bg-blue-100', 'text-blue-800'],
+        hard: ['Трудно ниво', 'bg-rose-100', 'text-rose-800']
+    }[level];
+    badge.className = `inline-block mb-2 text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded-full ${config[1]} ${config[2]}`;
+    badge.innerText = config[0];
+}
+
+function updateProgress() {
+    if (flow.taskCountTarget === 'infinite') return;
+    let target = parseInt(flow.taskCountTarget);
+    let percent = Math.min(100, Math.round((stats.completedTasks / target) * 100));
+    document.getElementById('progress-bar').style.width = `${percent}%`;
+    document.getElementById('progress-wrap').setAttribute('aria-valuenow', percent);
+}
+
+function updateStreak(correct) {
+    stats.streak = correct ? stats.streak + 1 : 0;
+    stats.bestStreak = Math.max(stats.bestStreak, stats.streak);
+    let el = document.getElementById('stat-streak');
+    el.innerText = stats.streak;
+    el.classList.remove('score-pop');
+    void el.offsetWidth;
+    if (correct) el.classList.add('score-pop');
+}
+
+function celebrate() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#10b981','#3b82f6','#f59e0b','#ec4899','#8b5cf6'];
+    for (let i = 0; i < 22; i++) {
+        const dot = document.createElement('span');
+        dot.className = 'celebration-dot';
+        dot.style.left = '50%'; dot.style.top = '55%';
+        dot.style.background = colors[i % colors.length];
+        dot.style.setProperty('--dx', `${Math.cos(i / 22 * Math.PI * 2) * (90 + Math.random() * 160)}px`);
+        dot.style.setProperty('--dy', `${Math.sin(i / 22 * Math.PI * 2) * (70 + Math.random() * 140)}px`);
+        document.body.appendChild(dot);
+        setTimeout(() => dot.remove(), 900);
+    }
+}
+
+function resetUI() {
+    document.querySelectorAll('.model-btn').forEach(b => {
+        b.className = "model-btn bg-white border-2 border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 font-bold py-4 px-2 rounded-xl transition shadow-sm text-lg";
+        b.disabled = false;
+    });
+    document.getElementById('step-1').classList.remove('disabled-block');
+    document.getElementById('step-1').classList.remove('hidden');
+    document.getElementById('steps-2-3-container').classList.add('hidden');
+    document.getElementById('step-2').classList.remove('disabled-block');
+    document.getElementById('step-2').classList.remove('hidden');
+    document.getElementById('expr-btn').disabled = false;
+    document.getElementById('expr-btn').classList.remove('opacity-50');
+    
+    document.getElementById('fb-step-1').innerHTML = "";
+    document.getElementById('fb-step-2').innerHTML = "";
+    document.getElementById('fb-step-3').innerHTML = "";
+    
+    document.getElementById('final-ans').value = "";
+    document.getElementById('final-ans').disabled = false;
+    document.getElementById('final-btn').disabled = false;
+    document.getElementById('final-btn').classList.remove('opacity-50');
+    
+    let jBtn = document.getElementById('joker-btn');
+    jBtn.disabled = false;
+    jBtn.classList.remove('opacity-50');
+    document.getElementById('joker-btn-text').innerText = "Интерактивна подсказка";
+    document.getElementById('joker-container').classList.add('hidden');
+    document.getElementById('joker-container').innerHTML = '';
+    document.querySelector('#step-3 textarea').value = '';
+    document.getElementById('final-step-number').innerText = '3';
+    document.getElementById('final-step-label').innerText = 'Краен резултат';
+    document.getElementById('direct-answer-note').classList.add('hidden');
+
+    let nxtBtn = document.getElementById('dynamic-next-btn');
+    nxtBtn.onclick = skipTask;
+    nxtBtn.className = "w-full md:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-2xl transition shadow-sm text-lg flex items-center justify-center gap-2 mx-auto";
+    nxtBtn.innerHTML = "⏭️ Пропусни задачата";
+}
+
+function updatePointsUI() { document.getElementById('current-task-points').innerText = currentTaskPoints; }
+
+function deductPoints(amount) {
+    if(taskCompleted) return;
+    currentTaskPoints -= amount;
+    if(currentTaskPoints < 0) currentTaskPoints = 0;
+    updatePointsUI();
+}
+
+// --- ЛОГИКА НА ПРОВЕРКИТЕ ---
+function checkModel(selectedType, clickedBtn) {
+    if (flow.step !== 1 || taskCompleted) return;
+    
+    document.querySelectorAll('.model-btn').forEach(b => b.classList.add('opacity-50'));
+    clickedBtn.classList.remove('opacity-50');
+    let fb = document.getElementById('fb-step-1');
+    
+    let isCorrect = false;
+    if (task.acceptedModels && task.acceptedModels.includes(selectedType)) isCorrect = true;
+    else if (selectedType === task.type) isCorrect = true;
+    else if ((task.type === 'var' || task.type === 'perm') && selectedType === 'mul') isCorrect = true;
+
+    if (isCorrect) {
+        flow.selectedModel = selectedType;
+        clickedBtn.className = "model-btn bg-emerald-600 text-white border-2 border-emerald-700 font-extrabold py-4 px-2 rounded-xl shadow-lg text-lg";
+        let msg = `✅ Точно така! Моделът е: <b>${typesMap[selectedType]}</b>.`;
+        if (selectedType === 'mul' && task.type !== 'mul') msg += ` (Формулата за ${typesMap[task.type]} произтича от умножението.)`;
+        fb.innerHTML = `<span class="text-emerald-700 bg-emerald-100 px-4 py-2 rounded-lg inline-block shadow-sm">${msg}</span>`;
+        
+        flow.step = 2; 
+        document.getElementById('step-1').classList.add('disabled-block');
+        document.getElementById('steps-2-3-container').classList.remove('hidden');
+        buildExpressionUI(selectedType);
+    } else {
+        clickedBtn.classList.remove('opacity-50');
+        clickedBtn.classList.add('border-red-500', 'bg-red-50', 'text-red-700', 'shake');
+        setTimeout(() => clickedBtn.classList.remove('shake'), 400);
+        taskCompleted = true;
+        currentTaskPoints = 0;
+        updatePointsUI();
+        stats.completedTasks++;
+        stats.maxPoints += currentTaskMaxPoints;
+        updateStreak(false);
+        updateProgress();
+        document.getElementById('stat-solved').innerText = stats.completedTasks;
+        document.querySelectorAll('.model-btn').forEach(button => button.disabled = true);
+        const validModels = task.acceptedModels ? [...task.acceptedModels] : [task.type];
+        if ((task.type === 'var' || task.type === 'perm') && !validModels.includes('mul')) validModels.push('mul');
+        const modelNames = validModels.map(model => typesMap[model]).join(' или ');
+        fb.innerHTML = `<div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-5 text-rose-900">
+            <div class="text-xl font-extrabold mb-2">❌ Избраният модел не е подходящ.</div>
+            <div class="font-bold">Правилен модел: ${modelNames}.</div>
+            <div class="mt-2 text-sm">Задачата приключва с 0 точки. Разгледай решението и премини към следващата.</div>
+            ${buildDetailedSolution(task)}
+        </div>`;
+        const jBtn = document.getElementById('joker-btn');
+        jBtn.disabled = true;
+        jBtn.classList.add('opacity-50');
+        activateNextButton();
+    }
+}
+
+function buildExpressionUI(selectedType) {
+    let html = '';
+    let container = document.getElementById('expr-builder');
+    
+    if (task.exprTerms) {
+        const symbol = task.exprOp === '*' ? '·' : task.exprOp;
+        html = task.exprTerms.map((value, i) => `<input type="number" id="inp-custom-${i}" class="math-input-large text-xl" aria-label="Част ${i+1} от съставния израз">`).join(` <span class="mx-2 text-slate-500 font-bold text-3xl">${symbol}</span> `);
+    } else if (task.special === 'p9' && selectedType === 'perm') {
+        html = `<span class="text-3xl font-bold text-slate-600">2 ·</span> <span class="italic font-serif text-4xl mr-1 text-slate-700">P</span><sub class="mt-4"><input type="number" id="inp-p9-perm" class="math-input p-1 h-10 w-12 text-xl border-2" aria-label="Брой обекти в пермутацията"></sub>`;
+    } else if (selectedType === 'add') {
+        html = task.terms.map((value, i) => `<input type="number" id="inp-add-${i}" class="math-input text-2xl h-12" aria-label="Събираемо ${i+1}">`).join(' <span class="mx-3 text-slate-400 font-bold text-3xl">+</span> ');
+    } else if (selectedType === 'mul') {
+        let fCount = 2;
+        if (task.type === 'mul') fCount = task.terms.length;
+        if (task.type === 'var') fCount = task.k;
+        if (task.type === 'perm' && task.special !== 'p9') fCount = task.exp1;
+        let inputs = [];
+        for(let i=0; i<fCount; i++) inputs.push(`<input type="number" id="inp-mul-${i}" class="math-input text-2xl h-12" aria-label="Множител ${i+1}">`);
+        html = inputs.join(' <span class="mx-3 text-slate-400 font-bold text-3xl">·</span> ');
+    } else if (selectedType === 'perm') {
+        html = `<span class="italic font-serif text-4xl mr-1 text-slate-700">P</span><sub class="mt-4"><input type="number" id="inp-perm" class="math-input p-1 h-10 w-12 text-xl border-2"></sub>`;
+    } else if (selectedType === 'var' || selectedType === 'comb') {
+        let letter = selectedType === 'var' ? 'V' : 'C';
+        html = `<span class="italic font-serif text-4xl text-slate-700">${letter}</span><div class="inline-flex flex-col mx-2 space-y-2">
+                <input type="number" id="inp-upper" class="math-input p-1 h-10 w-12 text-xl border-2">
+                <input type="number" id="inp-lower" class="math-input p-1 h-10 w-12 text-xl border-2">
+                </div>`;
+    }
+    container.innerHTML = html;
+}
+
+function checkExpression() {
+    if (taskCompleted || step2Skipped) return;
+    let fb = document.getElementById('fb-step-2');
+    let isCorrect = false;
+    
+    if (task.exprTerms) {
+        let val = Array.from(document.querySelectorAll('[id^="inp-custom-"]'), inp => parseInt(inp.value));
+        let exp = [...task.exprTerms];
+        if (task.exprOp === '+' || task.exprOp === '*') {
+            val.sort((a,b)=>a-b); exp.sort((a,b)=>a-b);
+        }
+        isCorrect = val.length === exp.length && val.every((v,i) => v === exp[i]);
+    } else if (task.special === 'p9' && flow.selectedModel === 'perm') {
+        isCorrect = parseInt(document.getElementById('inp-p9-perm').value) === task.exp1;
+    } else if (flow.selectedModel === 'add') {
+        let val = Array.from(document.querySelectorAll('[id^="inp-add-"]'), inp => parseInt(inp.value)).sort((a,b)=>a-b);
+        let exp = [...task.terms].sort((a,b)=>a-b);
+        isCorrect = val.length === exp.length && val.every((v,i) => v === exp[i]);
+    } else if (flow.selectedModel === 'mul') {
+        let val = [];
+        let inputs = document.querySelectorAll('[id^="inp-mul-"]');
+        inputs.forEach(inp => val.push(parseInt(inp.value)));
+        
+        let exp = [];
+        if (task.special === 'p9') exp = [fact(task.exp1), task.exp2];
+        else if (task.type === 'var') for(let i=0; i<task.k; i++) exp.push(task.n - i);
+        else if (task.type === 'perm') for(let i=task.exp1; i>=1; i--) exp.push(i);
+        else if (task.type === 'mul') exp = [...task.terms];
+        else exp = [task.exp1, task.exp2]; 
+        
+        val.sort((a,b)=>a-b); exp.sort((a,b)=>a-b);
+        isCorrect = val.every((v,i) => v === exp[i]) && val.length === exp.length;
+    } else if (flow.selectedModel === 'perm') {
+        if(parseInt(document.getElementById('inp-perm').value) === task.exp1) isCorrect = true;
+    } else if (flow.selectedModel === 'var' || flow.selectedModel === 'comb') {
+        let up = parseInt(document.getElementById('inp-upper').value);
+        let low = parseInt(document.getElementById('inp-lower').value);
+        if(low === task.n && up === task.k) isCorrect = true;
+    }
+
+    if (isCorrect) {
+        fb.innerHTML = `<span class="text-blue-700 bg-blue-100 px-4 py-2 rounded-lg inline-block font-bold shadow-sm">✅ Правилно съставен израз!</span>`;
+        document.getElementById('step-2').classList.add('disabled-block');
+        document.getElementById('expr-btn').disabled = true;
+        document.getElementById('final-ans').focus();
+    } else {
+        fb.innerHTML = `<span class="text-red-700 bg-red-100 px-4 py-2 rounded-lg inline-block font-bold shadow-sm">❌ Има грешка в израза. Провери стойностите.</span>`;
+        document.getElementById('step-2').classList.add('shake');
+        setTimeout(() => document.getElementById('step-2').classList.remove('shake'), 400);
+        deductPoints(2);
+    }
+}
+
+function cNotation(n, k) { return `<i>C</i><sub>${n}</sub><sup>${k}</sup>`; }
+function vNotation(n, k) { return `<i>V</i><sub>${n}</sub><sup>${k}</sup>`; }
+function pNotation(n) { return `<i>P</i><sub>${n}</sub>`; }
+
+function factorialProduct(n) {
+    return Array.from({length: n}, (_, i) => n - i).join(' · ');
+}
+
+function combinationDetail(n, k) {
+    let numerator = Array.from({length: k}, (_, i) => n - i).join(' · ');
+    let denominator = Array.from({length: k}, (_, i) => k - i).join(' · ');
+    return `${cNotation(n,k)} = (${numerator}) / (${denominator}) = ${calcC(n,k)}`;
+}
+
+function variationDetail(n, k) {
+    let factors = Array.from({length: k}, (_, i) => n - i);
+    return `${vNotation(n,k)} = ${factors.join(' · ')} = ${calcV(n,k)}`;
+}
+
+function buildDetailedSolution(t) {
+    let reason = '';
+    let steps = [];
+    const C = cNotation;
+    const V = vNotation;
+
+    const specialSolutions = {
+        a6: () => ({ reason: 'Разделяме избора на два несъвместими случая: двойка момчета или двойка момичета.', steps: [`Момчета: ${C(t.n,2)} = ${calcC(t.n,2)}.`, `Момичета: ${C(t.k,2)} = ${calcC(t.k,2)}.`, `Общо: ${calcC(t.n,2)} + ${calcC(t.k,2)} = ${t.ans}.`] }),
+        a7: () => ({ reason: 'Четирите топки трябва да са или само бели, или само червени.', steps: [`Бели: ${C(t.n,4)} = ${calcC(t.n,4)}.`, `Червени: ${C(t.k,4)} = ${calcC(t.k,4)}.`, `Общо: ${calcC(t.n,4)} + ${calcC(t.k,4)} = ${t.ans}.`] }),
+        a8: () => ({ reason: 'Има два допустими състава на контролната работа.', steps: [`3 алгебрични и 2 геометрични: ${C(t.n,3)} · ${C(t.k,2)} = ${t.terms[0]}.`, `2 алгебрични и 3 геометрични: ${C(t.n,2)} · ${C(t.k,3)} = ${t.terms[1]}.`, `Събираме случаите: ${t.terms[0]} + ${t.terms[1]} = ${t.ans}.`] }),
+        a14: () => ({ reason: 'Възможните отбори са с три различни размера, затова събираме трите случая.', steps: [`${C(t.n,2)} = ${calcC(t.n,2)}, ${C(t.n,3)} = ${calcC(t.n,3)}, ${C(t.n,4)} = ${calcC(t.n,4)}.`, `${calcC(t.n,2)} + ${calcC(t.n,3)} + ${calcC(t.n,4)} = ${t.ans}.`] }),
+        a15: () => ({ reason: 'Числото се дели на 5, ако завършва на 0 или на 5. Разглеждаме двата случая поотделно.', steps: [`Крайна цифра 0: ${t.terms[0]} числа.`, `Крайна цифра 5: ${t.terms[1]} числа.`, `Общо: ${t.terms[0]} + ${t.terms[1]} = ${t.ans}.`] }),
+        m6: () => ({ reason: 'Събираме определените книги в един блок, а после подреждаме и книгите вътре в блока.', steps: [`Получаваме ${t.n-t.k+1} обекта, които се подреждат по ${(t.n-t.k+1)}! = ${t.exp1} начина.`, `Книгите в блока се подреждат по ${t.k}! = ${t.exp2} начина.`, `${t.exp1} · ${t.exp2} = ${t.ans}.`] }),
+        m7: () => ({ reason: 'Подредбата на единия ред не ограничава подредбата на другия.', steps: [`Първи ред: ${t.n}! = ${t.exp1}.`, `Втори ред: ${t.k}! = ${t.exp2}.`, `${t.exp1} · ${t.exp2} = ${t.ans}.`] }),
+        m8: () => ({ reason: 'Изборът на алгебричните и геометричните задачи се извършва независимо.', steps: [`${C(t.n,3)} = ${t.terms[0]}.`, `${C(t.k,2)} = ${t.terms[1]}.`, `${t.terms[0]} · ${t.terms[1]} = ${t.ans}.`] }),
+        m9: () => ({ reason: 'Избираме мъжете и жените независимо, след което умножаваме.', steps: [`${C(t.n,2)} = ${t.terms[0]}.`, `${C(t.k,3)} = ${t.terms[1]}.`, `${t.terms[0]} · ${t.terms[1]} = ${t.ans}.`] }),
+        m10: () => ({ reason: 'Избираме длъжността на жената, самата жена и двама различни мъже за останалите длъжности.', steps: [`Длъжност за жената: 3 избора.`, `Жена: ${t.k} избора.`, `Двамата мъже с различни длъжности: ${t.n} · ${t.n-1}.`, `3 · ${t.k} · ${t.n} · ${t.n-1} = ${t.ans}.`] }),
+        p7: () => ({ reason: 'Първата и последната позиция са вече заети от определените букви.', steps: [`Свободни остават ${t.exp1} букви.`, `${pNotation(t.exp1)} = ${t.exp1}! = ${factorialProduct(t.exp1)} = ${t.ans}.`] }),
+        p8: () => ({ reason: 'Мястото в средата е фиксирано за определения ученик.', steps: [`Останалите ${t.exp1} ученици се подреждат свободно.`, `${t.exp1}! = ${factorialProduct(t.exp1)} = ${t.ans}.`] }),
+        p9: () => ({ reason: 'Двата автомобила разглеждаме като един блок.', steps: [`Блокът и останалите автомобили образуват ${t.exp1} обекта: ${t.exp1}! = ${fact(t.exp1)}.`, `В блока двата автомобила могат да разменят местата си по 2 начина.`, `2 · ${fact(t.exp1)} = ${t.ans}.`] }),
+        p14: () => ({ reason: 'При кръгова подредба завъртанията са еднакви, затова фиксираме един човек.', steps: [`Останалите ${t.exp1} души се подреждат по ${t.exp1}! начина.`, `${t.exp1}! = ${factorialProduct(t.exp1)} = ${t.ans}.`] }),
+        p15: () => ({ reason: 'Първото и последното място са предварително заети.', steps: [`За останалите ${t.exp1} състезатели остават ${t.exp1} места.`, `${t.exp1}! = ${factorialProduct(t.exp1)} = ${t.ans}.`] }),
+        v6: () => ({ reason: 'Първата цифра не може да е 0, а повторения не са разрешени.', steps: [`За първата позиция има ${t.n} избора.`, `За следващите позиции остават съответно ${t.n}, ${t.n-1} и ${t.n-2} избора.`, `${t.exprTerms.join(' · ')} = ${t.ans}.`] }),
+        v7: () => ({ reason: 'Разделяме четните числа според последната цифра: 0 или положителна четна цифра.', steps: [`Завършващи на 0: ${t.exprTerms[0]}.`, `Завършващи на положителна четна цифра: ${t.exprTerms[1]}.`, `${t.exprTerms[0]} + ${t.exprTerms[1]} = ${t.ans}.`] }),
+        v8: () => ({ reason: 'Първо определяме позицията на задължителния символ, после запълваме останалите места.', steps: [`Позиция на задължителния символ: ${t.k} избора.`, `Останалите места: ${V(t.n-1,t.k-1)} = ${calcV(t.n-1,t.k-1)}.`, `${t.k} · ${calcV(t.n-1,t.k-1)} = ${t.ans}.`] }),
+        v14: () => ({ reason: 'От всички настанявания изваждаме тези, при които двамата приятели са един до друг.', steps: [`Всички настанявания: ${V(t.n,t.k)} = ${calcV(t.n,t.k)}.`, `Съседни: 2 · ${t.n-1} · ${V(t.n-2,t.k-2)} = ${t.exprTerms[1]}.`, `${t.exprTerms[0]} - ${t.exprTerms[1]} = ${t.ans}.`] }),
+        v15: () => ({ reason: 'Избираме цвета на горната ивица, а останалите цветове подреждаме без повторение.', steps: [`Горна ивица: 2 избора.`, `Останали ивици: ${V(t.n-1,t.k-1)} = ${calcV(t.n-1,t.k-1)}.`, `2 · ${calcV(t.n-1,t.k-1)} = ${t.ans}.`] }),
+        c6: () => ({ reason: 'Всяка двойка върхове определя отсечка, но страните не са диагонали.', steps: [`Всички отсечки: ${C(t.n,2)} = ${calcC(t.n,2)}.`, `Страни: ${t.n}.`, `${calcC(t.n,2)} - ${t.n} = ${t.ans}.`] }),
+        c7: () => ({ reason: 'Всяка двойка отбори играе два мача.', steps: [`Двойки отбори: ${C(t.n,2)} = ${calcC(t.n,2)}.`, `Мачове: 2 · ${calcC(t.n,2)} = ${t.ans}.`] }),
+        c8: () => ({ reason: 'Всяка вътрешна пресечна точка се определя от избора на четири върха.', steps: [combinationDetail(t.n,4), `Следователно пресечните точки са ${t.ans}.`] }),
+        c9: () => ({ reason: 'Избираме трима изучаващи английски и трима изучаващи немски независимо.', steps: [`${C(t.n,3)} = ${calcC(t.n,3)}.`, `${C(t.k,3)} = ${calcC(t.k,3)}.`, `${calcC(t.n,3)} · ${calcC(t.k,3)} = ${t.ans}.`] }),
+        c15: () => ({ reason: 'Три неколинеарни точки определят една равнина.', steps: [combinationDetail(t.n,3), `Следователно равнините са ${t.ans}.`] })
+    };
+
+    if (specialSolutions[t.id]) {
+        ({reason, steps} = specialSolutions[t.id]());
+    } else if (t.type === 'add') {
+        reason = 'Изборът се извършва между отделни, несъвместими случаи, затова използваме събиране.';
+        steps = [`Случаите дават ${t.terms.join(', ')} възможности.`, `${t.terms.join(' + ')} = ${t.ans}.`];
+    } else if (t.type === 'mul') {
+        reason = 'Изборът преминава през последователни независими стъпки, затова умножаваме.';
+        steps = [`Броят на изборите по стъпки е ${t.terms.join(', ')}.`, `${t.terms.join(' · ')} = ${t.ans}.`];
+    } else if (t.type === 'perm') {
+        reason = 'Подреждат се всички свободни елементи и редът е съществен.';
+        steps = [`${pNotation(t.exp1)} = ${t.exp1}!`, `${factorialProduct(t.exp1)} = ${t.ans}.`];
+    } else if (t.type === 'var') {
+        reason = `Избират се и се подреждат ${t.k} от ${t.n} елемента без повторение.`;
+        steps = [variationDetail(t.n,t.k) + '.'];
+    } else {
+        reason = `Избират се ${t.k} от ${t.n} елемента, като редът не създава нов избор.`;
+        steps = [combinationDetail(t.n,t.k) + '.'];
+    }
+
+    return `<div class="mt-5 bg-white/90 border-2 border-slate-200 rounded-2xl p-5 text-left shadow-sm">
+        <h4 class="text-lg font-extrabold text-slate-800 mb-3 flex items-center gap-2">🧭 Подробно решение</h4>
+        <p class="text-slate-700 mb-3"><b>Идея:</b> ${reason}</p>
+        <ol class="list-decimal pl-6 space-y-2 text-slate-700">${steps.map(step => `<li>${step}</li>`).join('')}</ol>
+    </div>`;
+}
+
+function activateNextButton() {
+    let nxtBtn = document.getElementById('dynamic-next-btn');
+    if (flow.taskCountTarget !== 'infinite' && stats.completedTasks >= parseInt(flow.taskCountTarget)) {
+        nxtBtn.innerHTML = "🏆 Виж резултатите";
+        nxtBtn.className = "w-full md:w-auto bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold py-4 px-12 rounded-2xl transition-all shadow-xl hover:shadow-2xl text-xl flex items-center justify-center gap-2 mx-auto animate-pulse transform hover:-translate-y-1";
+        nxtBtn.onclick = endGame;
+    } else {
+        nxtBtn.innerHTML = "Следваща задача ➡️";
+        nxtBtn.className = "w-full md:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold py-4 px-12 rounded-2xl transition-all shadow-xl hover:shadow-2xl text-xl flex items-center justify-center gap-2 mx-auto animate-bounce transform hover:-translate-y-1";
+        nxtBtn.onclick = generateTask;
+    }
+}
+
+function skipTask() {
+    if(taskCompleted) return;
+    taskCompleted = true;
+    step2Skipped = true;
+
+    stats.completedTasks++;
+    stats.maxPoints += currentTaskMaxPoints;
+    updateStreak(false);
+    updateProgress();
+    
+    document.getElementById('stat-solved').innerText = stats.completedTasks;
+    
+    document.getElementById('step-1').classList.add('disabled-block');
+    document.getElementById('steps-2-3-container').classList.remove('hidden');
+    document.getElementById('step-2').classList.add('disabled-block');
+    
+    let fb = document.getElementById('fb-step-3');
+    let fbStr = `<div class="bg-amber-50 p-6 rounded-2xl text-amber-900 font-medium border-2 border-amber-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4 pb-4 border-b-2 border-amber-200">
+            <span class="text-xl font-bold flex items-center gap-2">⚠️ Задачата е пропусната.</span>
+            <span class="bg-amber-200 text-amber-900 px-3 py-1 rounded-lg font-bold text-lg shadow">0 т.</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-amber-200 text-center text-2xl font-bold font-serif text-slate-800">
+        Верен отговор: ${task.ans}
+        </div>${buildDetailedSolution(task)}</div>`;
+    fb.innerHTML = fbStr;
+
+    document.getElementById('final-ans').disabled = true;
+    document.getElementById('final-btn').disabled = true;
+    document.getElementById('final-btn').classList.add('opacity-50');
+    
+    let jBtn = document.getElementById('joker-btn');
+    jBtn.disabled = true;
+    jBtn.classList.add('opacity-50');
+    
+    activateNextButton();
+}
+
+function checkFinalAnswer() {
+    if (taskCompleted) return;
+    let val = parseInt(document.getElementById('final-ans').value);
+    let fb = document.getElementById('fb-step-3');
+    
+    if (val === task.ans) {
+        taskCompleted = true;
+        if (!task.directAnswer && !document.getElementById('step-2').classList.contains('disabled-block')) {
+            step2Skipped = true;
+            document.getElementById('step-2').classList.add('disabled-block');
+            document.getElementById('fb-step-2').innerHTML = `<span class="text-slate-500 italic">Стъпката е прескочена (директно пресмятане).</span>`;
+        }
+
+        stats.completedTasks++;
+        stats.correctTasks++;
+        stats.points += currentTaskPoints;
+        stats.maxPoints += currentTaskMaxPoints;
+        updateStreak(true);
+        updateProgress();
+        
+        document.getElementById('stat-solved').innerText = stats.completedTasks;
+        document.getElementById('stat-points').innerText = stats.points;
+        
+        let fbStr = `<div class="bg-emerald-100 p-6 rounded-2xl text-emerald-900 font-medium border-2 border-emerald-200 shadow-sm">
+            <div class="flex items-center justify-between mb-4 pb-4 border-b-2 border-emerald-200">
+                <span class="text-2xl font-extrabold flex items-center gap-2">✅ Верен отговор!</span>
+                <span class="bg-emerald-600 text-white px-3 py-1 rounded-lg font-bold text-xl shadow">+${currentTaskPoints} т.</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-emerald-200 text-center text-2xl font-bold font-serif text-slate-800">`;
+            
+        if (task.customAnswer && task.exprTerms) {
+            const symbol = task.exprOp === '*' ? ' · ' : ` ${task.exprOp} `;
+            fbStr += `${task.exprTerms.join(symbol)} = ${task.ans}`;
+        }
+        else if (task.type === 'add') {
+            fbStr += `${task.terms.join(' + ')} = ${task.ans}`;
+        }
+        else if (task.type === 'mul') {
+            fbStr += `${task.terms.join(' · ')} = ${task.ans}`;
+        }
+        else if (task.special === 'p9') {
+            fbStr += `2 · <i>P</i><sub>${task.exp1}</sub> = 2 · ${task.exp1}! = 2 · ${fact(task.exp1)} = ${task.ans}`;
+        }
+        else if (task.type === 'perm') {
+            let parts = []; for(let i=task.exp1; i>=1; i--) parts.push(i);
+            fbStr += `<i>P</i><sub>${task.exp1}</sub> = ${task.exp1}! = ${parts.join(' · ')} = ${task.ans}`;
+        } else if (task.type === 'var') {
+            let parts = []; for(let i=0; i<task.k; i++) parts.push(task.n - i);
+            fbStr += `<i>V</i><sub>${task.n}</sub><sup>${task.k}</sup> = ${parts.join(' · ')} = ${task.ans}`;
+        } else if (task.type === 'comb') {
+            let numStr = []; let denStr = [];
+            for (let i = 0; i < task.k; i++) { numStr.push(task.n - i); denStr.push(task.k - i); }
+            fbStr += `<div class="inline-flex items-center gap-2">
+                <span><i>C</i><sub>${task.n}</sub><sup>${task.k}</sup> =</span>
+                <table class="math-fraction text-2xl">
+                    <tr><td class="math-fraction-num border-slate-700">${numStr.join(' · ')}</td></tr>
+                    <tr><td class="math-fraction-den">${denStr.join(' · ')}</td></tr>
+                </table>
+                <span>= ${task.ans}</span>
+            </div>`;
+        }
+        
+        fbStr += `</div>${buildDetailedSolution(task)}</div>`;
+        fb.innerHTML = fbStr;
+        
+        document.getElementById('final-ans').disabled = true;
+        document.getElementById('final-btn').disabled = true;
+        document.getElementById('final-btn').classList.add('opacity-50');
+        
+        let jBtn = document.getElementById('joker-btn');
+        jBtn.disabled = true;
+        jBtn.classList.add('opacity-50');
+        
+        activateNextButton();
+        celebrate();
+
+    } else {
+        fb.innerHTML = `<span class="text-red-700 bg-red-100 px-6 py-3 rounded-xl inline-block font-bold shadow-sm">❌ Грешен числов отговор. Опитай пак.</span>`;
+        document.getElementById('final-ans').classList.add('shake', 'border-red-500');
+        setTimeout(() => document.getElementById('final-ans').classList.remove('shake', 'border-red-500'), 400);
+        deductPoints(1);
+        updateStreak(false);
+    }
+}
+
+// --- ВИЗУАЛНА ПОДСКАЗКА (ЖОКЕР) ---
+function distinctHintGlyph(icon, label, index, groupIndex = 0) {
+    const lower = label.toLocaleLowerCase('bg');
+    const letters = ['А','Б','В','Г','Д','Е','Ж','З','И','К','Л','М'];
+    const cards = ['A♠','K♥','Q♦','J♣','10♠','9♥','8♦','7♣','6♠','5♥','4♦','3♣'];
+    const songs = ['♪','♫','♬','♩','𝄞','♭','♯','🎹','🎸','🎺','🎻','🥁'];
+    const colors = ['🔴','🔵','🟢','🟡','🟣','🟠','🟤','⚫','⚪','🩷','🩵','🩶'];
+    if (lower.includes('карт')) return cards[index % cards.length];
+    if (lower.includes('пес')) return songs[index % songs.length];
+    if (lower.includes('букв')) return letters[index % letters.length];
+    if (lower.includes('цифр')) return String(index % 10);
+    if (lower.includes('цвет')) return colors[index % colors.length];
+    if (/(финалист|състезател|бегач|ученик|кандидат|приятел|турист|момч|момич|мъже|жени|хора)/.test(lower)) return letters[(groupIndex * 6 + index) % letters.length];
+    return icon;
+}
+
+function conditionTokens(icon, count, label, tone = 'slate', groupIndex = 0) {
+    const shown = Math.min(count, 12);
+    const themes = {
+        slate: 'border-slate-200 bg-slate-50 text-slate-700',
+        blue: 'border-blue-200 bg-blue-50 text-blue-700',
+        rose: 'border-rose-200 bg-rose-50 text-rose-700',
+        violet: 'border-violet-200 bg-violet-50 text-violet-700',
+        emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        amber: 'border-amber-200 bg-amber-50 text-amber-700'
+    };
+    const tokens = Array.from({length: shown}, (_, i) => {
+        const glyph = distinctHintGlyph(icon, label, i, groupIndex);
+        const hue = (groupIndex * 83 + i * 47) % 360;
+        const identity = `${label} ${i + 1}`;
+        return `<button type="button" class="hint-object relative inline-flex w-12 h-12 items-center justify-center border-2 rounded-xl text-xl font-black shadow-sm transition hover:-translate-y-1 hover:shadow-md" style="background-color:hsl(${hue} 85% 96%);border-color:hsl(${hue} 68% 67%);color:hsl(${hue} 65% 28%)" data-source-id="${groupIndex}-${label}-${i}" data-token="${glyph}" data-group="${label}" data-identity="${identity}" title="Маркирай: ${identity}" aria-label="${identity}" aria-pressed="false"><span aria-hidden="true">${glyph}</span><span class="absolute -right-1.5 -bottom-1.5 min-w-5 h-5 px-1 inline-flex items-center justify-center rounded-full bg-slate-800 text-white text-[0.62rem] leading-none border-2 border-white">${i + 1}</span></button>`;
+    }).join('');
+    return `<div class="p-4 rounded-xl border-2 ${themes[tone] || themes.slate} shrink-0">
+        <div class="text-sm font-bold mb-3">${label}: ${count}</div>
+        <div class="flex flex-wrap gap-2 max-w-md">${tokens}${count > shown ? `<span class="self-center font-bold text-slate-500">+ ${count-shown}</span>` : ''}</div>
+    </div>`;
+}
+
+function conditionSlots(count, locked = {}) {
+    return `<div class="flex flex-wrap justify-center gap-2">${Array.from({length: count}, (_, i) => {
+        const content = locked[i] || '?';
+        const fixed = Boolean(locked[i]);
+        return `<button type="button" data-fixed="${fixed}" data-original="${content}" class="hint-slot w-12 h-14 rounded-lg border-2 ${fixed ? 'border-rose-400 bg-rose-50 text-rose-700' : 'border-dashed border-slate-300 bg-white text-slate-400'} flex items-center justify-center font-extrabold text-xl shadow-sm" title="${fixed ? 'Фиксирана позиция' : 'Маркирай позицията'}">${content}</button>`;
+    }).join('')}</div>`;
+}
+
+// Семантични профили за всички 50 лесни и средни шаблона. Така подсказката
+// използва същите обекти, роли и позиции, за които се говори в условието.
+const standardHintProfiles = {
+    a1:{g:[['🥪','видове сандвичи','n','amber'],['🍎','видове плодове','k','rose']],join:'ИЛИ',note:'Избери точно един артикул от една от двете групи.'},
+    a2:{g:[['👟','модели маратонки','n','blue'],['👞','модели официални обувки','k','amber']],join:'ИЛИ',note:'Избира се един чифт обувки.'},
+    a3:{g:[['🏃','индивидуални спортове','n','emerald'],['⚽','отборни спортове','k','blue']],join:'ИЛИ',note:'Ученикът избира точно един спорт.'},
+    a4:{g:[['🚀','научнофантастични романи','n','violet'],['🔎','криминални романи','k','slate']],join:'ИЛИ',note:'Избира се една книга от един от двата жанра.'},
+    a5:{g:[['➗','задачи по алгебра','n','blue'],['📐','задачи по геометрия','k','violet']],join:'ИЛИ',note:'Избира се една задача от един от двата раздела.'},
+    a9:{g:[['🍓','плодови вкусове','n','rose'],['🍫','шоколадови вкусове','k','amber']],join:'ИЛИ',note:'Избира се един вкус сладолед.'},
+    a10:{g:[['🚌','автобусни линии','n','blue'],['🚋','трамвайни линии','k','emerald']],join:'ИЛИ',note:'Избира се една линия за пътуване.'},
+    a11:{g:[['🔬','научнопопулярни книги','n','blue'],['🏛️','исторически книги','k','amber']],join:'ИЛИ',note:'Избира се една книга.'},
+    a12:{g:[['🔢','работилници по математика','n','blue'],['🧪','работилници по природни науки','k','emerald']],join:'ИЛИ',note:'Избира се една работилница.'},
+    a13:{g:[['🔤','разрешени букви','n','violet'],['🔢','разрешени цифри','k','blue']],join:'ИЛИ',note:'Еднознаковият код е или буква, или цифра.'},
+
+    m1:{g:[['🍲','основни ястия','n','amber'],['🍰','десерти','k','rose']],join:'И',note:'Състави меню от едно основно ястие и един десерт.'},
+    m2:{g:[['🛣️','пътища от A до Б','n','blue'],['🛣️','пътища от Б до В','k','emerald']],join:'И',note:'Пътуването има две последователни отсечки.'},
+    m3:{g:[['👚','различни блузи','n','emerald'],['<span class="skirt-icon" aria-label="пола"></span>','различни поли','k','rose']],join:'И',note:'Съчетай една блуза с една пола.'},
+    m4:{g:[['🎲','стени на зара',6,'blue'],['🃏','специални карти','k','violet']],join:'И',note:'Резултатът включва хвърляне на зар и избор на карта.'},
+    m5:{g:[['👩‍🏫','учители','n','blue'],['🧑‍🎓','ученици','k','emerald']],join:'И',note:'Двойката съдържа един учител и един ученик.'},
+    m11:{g:[['📓','видове тетрадки','n','emerald'],['🖊️','видове химикалки','k','blue']],join:'И',note:'Състави комплект от една тетрадка и една химикалка.'},
+    m12:{g:[['🚌','автобусни маршрути','n','blue'],['🚆','влакове','k','emerald']],join:'И',note:'Пътуването включва автобусен маршрут и влак.'},
+    m13:{g:[['🍨','вкусове','n','rose'],['📏','размери','k','blue'],['✨','видове поръска',3,'amber']],join:'И',note:'Избери вкус, размер и поръска.'},
+    m14:{g:[['🔤','разрешени букви','n','violet'],['🔢','разрешени цифри','k','blue']],join:'И',slots:5,note:'Кодът има 2 буквени и 3 цифрови позиции; повторенията са позволени.'},
+    m15:{g:[['👚','блузи','n','emerald'],['<span class="skirt-icon" aria-label="пола"></span>','поли','k','rose'],['👟','чифтове обувки',3,'blue']],join:'И',note:'Комплектът съдържа блуза, пола и чифт обувки.'},
+
+    p1:{g:[['📚','различни книги','n','blue']],slots:'n',note:'Подреди всички книги по местата на рафта.'},
+    p2:{g:[['👥','приятели','n','emerald']],slots:'n',note:'Подреди всички приятели на пейката.'},
+    p3:{g:[['🔤','различни букви','n','violet']],slots:'n',note:'Промени реда на всички различни букви.'},
+    p4:{g:[['🏃','състезатели','n','blue']],slots:'n',note:'Подреди всички състезатели в пълното класиране.'},
+    p5:{g:[['📘','учебни предмети','n','blue']],slots:'n',note:'Подреди всички предмети в дневната програма.'},
+    p6:{g:[['🖼️','различни картини','n','violet']],slots:'n',note:'Подреди всички картини в редица на стената.'},
+    p10:{g:[['🖼️','различни снимки','n','blue']],slots:'n',note:'Подреди всички снимки в един ред.'},
+    p11:{g:[['🚩','различни знамена','n','rose']],slots:'n',note:'Подреди всички знамена по местата им.'},
+    p12:{g:[['🧑‍🎓','ученици','n','emerald']],slots:'n',fixedFirst:'⭐',note:'Определеният ученик е фиксиран на първото място.'},
+    p13:{g:[['📚','различни книги','n','blue']],slots:'n',fixedFirst:'📖',note:'Речникът е фиксиран най-вляво; останалите книги се подреждат.'},
+
+    v1:{g:[['🧑‍🎓','ученици','n','emerald']],slots:2,slotLabel:'председател · заместник',note:'Двете длъжности са различни и редът на избора има значение.'},
+    v2:{g:[['🏆','отбори','n','amber']],slots:3,locked:{0:'🥇',1:'🥈',2:'🥉'},slotLabel:'първо · второ · трето място',note:'Трите места са различни.'},
+    v3:{g:[['🔢','различни цифри','n','blue']],slots:'k',note:'Попълни PIN позициите без повторение на цифра.'},
+    v4:{g:[['🎨','налични цветове','n','violet']],slots:'k',note:'Подреди различни цветове в хоризонталните ивици.'},
+    v5:{g:[['📚','различни книги','n','blue']],slots:'k',note:'Избери и подреди книгите в номерираните места на витрината.'},
+    v9:{g:[['🧑‍🎓','ученици','n','emerald']],slots:'k',note:'Избери и подреди учениците на номерираните места на сцената.'},
+    v10:{g:[['🔣','различни символи','n','violet']],slots:'k',note:'Попълни кода без повторение на символ.'},
+    v11:{g:[['👥','кандидати','n','emerald']],slots:3,slotLabel:'председател · секретар · касиер',note:'Всяка длъжност е различна.'},
+    v12:{g:[['🏃','финалисти','n','blue']],slots:'k',note:'Подреди избраните финалисти по класираните места.'},
+    v13:{g:[['🖼️','картини','n','violet']],slots:'k',note:'Избери и подреди картините по местата в изложбата.'},
+
+    c1:{g:[['🧑‍🎓','желаещи ученици','n','emerald']],select:'k',note:'Маркирай учениците, които влизат в отбора.'},
+    c2:{g:[['🍎','различни плодове','n','rose']],select:'k',note:'Маркирай плодовете за смутито.'},
+    c3:{g:[['🃏','различни карти','n','violet']],select:'k',note:'Маркирай картите в ръката.'},
+    c4:{g:[['🥾','туристи','n','emerald']],select:'k',note:'Маркирай туристите в отряда.'},
+    c5:{g:[['🎱','налични числа','n','blue']],select:'k',note:'Маркирай числата върху билета.'},
+    c10:{g:[['🎵','различни песни','n','violet']],select:'k',note:'Маркирай песните в избора.'},
+    c11:{g:[['🍕','възможни добавки','n','amber']],select:'k',note:'Маркирай добавките за пицата.'},
+    c12:{g:[['👥','кандидати','n','emerald']],select:'k',note:'Маркирай членовете на журито.'},
+    c13:{g:[['🤝','хора','n','blue']],select:2,note:'Маркирай двама души, които образуват една двойка за ръкостискане.'},
+    c14:{g:[['📍','точки','n','violet']],select:2,note:'Маркирай две точки, които определят една отсечка.'}
+};
+
+function profileValue(value, t) {
+    return value === 'n' ? t.n : value === 'k' ? t.k : value;
+}
+
+function hintInteractionSpec(t) {
+    const profile = standardHintProfiles[t.id];
+    if (profile?.select) return { target: profileValue(profile.select, t), ordered: false, label: 'Избрана група' };
+    if (profile?.slots) {
+        const target = profileValue(profile.slots, t);
+        return { target, ordered: true, label: profile.slotLabel || (t.type === 'perm' ? 'Подредба на всички обекти' : `Класирани места от 1 до ${target}`) };
+    }
+    if (t.type === 'perm') return { target: t.n, ordered: true, label: 'Подредба на всички обекти' };
+    if (t.type === 'var') return { target: t.k, ordered: true, label: `Класирани места от 1 до ${t.k}` };
+    if (t.type === 'comb') return { target: t.k, ordered: false, label: 'Избрана група' };
+    if (t.type === 'add') return { target: 1, ordered: false, label: 'Един допустим избор' };
+    if (t.type === 'mul') {
+        const steps = profile?.g?.length || t.terms?.length || 2;
+        return { target: steps, ordered: true, label: 'Последователни стъпки на избора' };
+    }
+    return { target: null, ordered: false, label: 'Работна област' };
+}
+
+function hintRestriction(t) {
+    const special = {
+        a6: 'Двамата избрани са от един и същи пол.',
+        a7: 'Четирите топки са от един и същи цвят.',
+        a8: 'Разглеждат се два взаимно изключващи се случая: 3 + 2 или 2 + 3.',
+        a14: 'Броят на членовете е 2, 3 или 4.',
+        a15: 'Последната цифра е 0 или 5; цифрите не се повтарят.',
+        m6: `${t.k} определени книги трябва да образуват един общ блок.`,
+        m7: 'Подрежданията на двата реда са независими.',
+        m8: 'Избират се точно 3 задачи по алгебра и 2 по геометрия.',
+        m9: 'Комисията съдържа точно 2 мъже и 3 жени.',
+        m10: 'Точно една от трите различни длъжности се заема от жена.',
+        p7: 'Двете определени букви са фиксирани в двата края.',
+        p8: 'Определеният ученик заема единственото средно място.',
+        p9: 'Двата определени автомобила се разглеждат като общ блок.',
+        p14: 'Подредби, получени само чрез завъртане, са еднакви.',
+        p15: 'Двама определени състезатели са фиксирани в двата края.',
+        v6: 'Първата цифра не е 0; цифрите не се повтарят.',
+        v7: 'Последната цифра е четна, първата не е 0 и няма повторение.',
+        v8: 'Определеният символ участва точно веднъж.',
+        v14: 'Двамата определени приятели не заемат съседни места.',
+        v15: 'Най-горната ивица е в един от два предварително определени цвята.',
+        c6: 'От всички отсечки между върхове се изключват страните.',
+        c7: 'Всяка двойка отбори играе два мача.',
+        c8: 'Всяка вътрешна пресечна точка се определя от 4 върха.',
+        c9: 'Избират се точно 3 ученици от всяка от двете групи.',
+        c15: 'Всяка равнина се определя от 3 точки.'
+    };
+    return special[t.id] || standardHintProfiles[t.id]?.note || 'Следи точно кои обекти участват и какви ограничения са зададени.';
+}
+
+function buildHintGuide(t) {
+    const profile = standardHintProfiles[t.id];
+    const primaryLabel = profile?.g?.[0]?.[1] || 'обекта';
+    const guide = {
+        add: {
+            given: `Два алтернативни случая с ${t.n} и ${t.k} възможности.`,
+            seek: 'Общият брой допустими избори.',
+            order: 'Избира се от първия или от втория случай.',
+            question: 'Могат ли двата случая да настъпят едновременно?'
+        },
+        mul: {
+            given: t.terms?.length ? `${t.terms.length} последователни стъпки на избора.` : 'Две последователни стъпки на избора.',
+            seek: 'Броят на всички съставни резултати.',
+            order: 'За всеки избор на една стъпка се разглеждат всички избори на следващата.',
+            question: 'Колко възможности има на всяка стъпка?'
+        },
+        perm: {
+            given: `${t.n} различни обекта; използват се всички.`,
+            seek: 'Броят на всички техни линейни подредби.',
+            order: 'Редът има значение.',
+            question: 'Използват ли се всички обекти?'
+        },
+        var: {
+            given: `${t.n} различни ${primaryLabel}; трябва да се запълнят ${t.k} номерирани места.`,
+            seek: `Всички възможни класирания на първите ${t.k} места.`,
+            order: 'Да — редът има значение. Всеки участник се използва най-много веднъж.',
+            question: 'Ако А и Б разменят местата си, класирането променя ли се?'
+        },
+        comb: {
+            given: `${t.n} различни обекта; избират се ${t.k}.`,
+            seek: 'Броят на различните групи.',
+            order: 'Редът няма значение.',
+            question: 'Променя ли се групата при разместване на членовете ѝ?'
+        }
+    }[t.type] || {
+        given: 'Обектите и ограниченията от условието.',
+        seek: 'Търсеният брой възможности.',
+        order: 'Провери дали редът има значение.',
+        question: 'Кой комбинаторен модел описва ситуацията?'
+    };
+    const spec = hintInteractionSpec(t);
+    const targetText = spec.target ? `0 от ${spec.target}` : '0 избрани';
+    const actionSummary = t.type === 'var'
+        ? `<div class="mb-3 rounded-xl border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-cyan-50 px-4 py-4 text-slate-800"><span class="font-black text-blue-800">🎯 Какво да направиш:</span> Натисни ${t.k} различни ${primaryLabel} в реда, в който искаш да заемат места от 1 до ${t.k}. Първият натиснат заема 1. място, вторият — 2. място и т.н.</div>`
+        : '';
+    return `<section class="mb-5">
+        ${actionSummary}
+        <div class="grid md:grid-cols-3 gap-3">
+            <div class="hint-guide-card rounded-xl border-2 border-blue-200 bg-blue-50 p-4"><div class="text-xs font-black uppercase tracking-wide text-blue-600 mb-2">1. Дадено</div><div class="font-bold text-slate-800">${guide.given}</div></div>
+            <div class="hint-guide-card rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4"><div class="text-xs font-black uppercase tracking-wide text-emerald-600 mb-2">2. Търсим</div><div class="font-bold text-slate-800">${guide.seek}</div></div>
+            <div class="hint-guide-card rounded-xl border-2 border-violet-200 bg-violet-50 p-4"><div class="text-xs font-black uppercase tracking-wide text-violet-600 mb-2">3. Решаващ въпрос</div><div class="font-bold text-slate-800">${guide.question}</div><div class="mt-2 text-sm font-extrabold text-violet-800">${guide.order}</div></div>
+        </div>
+        <div class="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3"><span class="font-black text-amber-800">Ограничение:</span> <span class="font-semibold text-slate-700">${hintRestriction(t)}</span></div>
+        <div class="mt-3 rounded-xl border-2 border-dashed border-slate-300 bg-white p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3"><div class="font-black text-slate-700">${spec.ordered ? '🔢' : '🧺'} ${spec.label}</div><div id="hint-workbench-count" class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">${targetText}</div></div>
+            <div id="hint-workbench" class="hint-workbench-empty min-h-16 rounded-lg border border-slate-200 flex flex-wrap items-center gap-2 p-3"><span class="hint-empty-message text-sm font-semibold text-slate-400">Натисни върху обектите от схемата, за да построиш пример.</span></div>
+        </div>
+    </section>`;
+}
+
+function buildStandardConditionVisualization(t) {
+    const p = standardHintProfiles[t.id];
+    if (!p) return '';
+    const separator = `<div class="self-center font-extrabold ${p.join === 'ИЛИ' ? 'text-amber-600' : 'text-blue-600'} px-2">${p.join || ''}</div>`;
+    let html = p.g.map((group, i) => `${conditionTokens(group[0], profileValue(group[2],t), group[1], group[3], i)}${i < p.g.length-1 ? separator : ''}`).join('');
+    if (p.slots && t.type !== 'var') {
+        const count = profileValue(p.slots,t);
+        const locked = p.locked || (p.fixedFirst ? {0:p.fixedFirst} : {});
+        html += `<div class="p-4 bg-white border-2 border-slate-200 rounded-xl shrink-0"><div class="font-bold text-slate-700 mb-3">${p.slotLabel || `${count} позиции`}</div>${conditionSlots(count,locked)}</div>`;
+    }
+    if (p.select) html += `<div class="self-center px-4 py-3 bg-emerald-50 border-2 border-emerald-200 rounded-xl font-extrabold text-emerald-800 shrink-0">Маркирай ${profileValue(p.select,t)} от ${t.n}</div>`;
+    html += `<div class="self-center p-4 bg-amber-50 border-2 border-amber-200 rounded-xl font-bold text-slate-700 shrink-0 max-w-xs">${p.note}</div>`;
+    return html;
+}
+
+function polygonCondition(n, mode) {
+    const points = Array.from({length:n}, (_,i) => {
+        const a = -Math.PI/2 + i*2*Math.PI/n;
+        return [100+76*Math.cos(a),100+76*Math.sin(a)];
+    });
+    const polygon = points.map(p=>p.join(',')).join(' ');
+    const edges = points.map((p,i) => {
+        const q = points[(i+1)%n];
+        return `<line class="hint-edge hint-sequence-item" x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" stroke="#2563eb" stroke-width="3"/>`;
+    }).join('');
+    let diagonals = '';
+    if (mode === 'diagonals' || mode === 'intersections') {
+        const lines = [];
+        for (let i=0; i<n; i++) {
+            for (let j=i+1; j<n; j++) {
+                const adjacent = j === i+1 || (i === 0 && j === n-1);
+                if (!adjacent) lines.push(`<line class="hint-diagonal hint-sequence-item" data-from="${i}" data-to="${j}" x1="${points[i][0]}" y1="${points[i][1]}" x2="${points[j][0]}" y2="${points[j][1]}" stroke="${mode === 'intersections' ? '#7c3aed' : '#0ea5e9'}" stroke-width="1.15"/>`);
+            }
+        }
+        diagonals = lines.join('');
+    }
+    const dots = points.map((p,i)=>`<circle class="hint-point hint-sequence-item cursor-pointer" data-point="${i}" cx="${p[0]}" cy="${p[1]}" r="5" fill="#2563eb" tabindex="0" role="button" aria-label="Маркирай връх ${i+1}"><title>Връх ${i+1}</title></circle>`).join('');
+    return `<div class="p-4 bg-white border-2 border-blue-200 rounded-xl shrink-0 text-center"><svg viewBox="0 0 200 200" class="w-72 h-72"><polygon points="${polygon}" fill="#eff6ff" stroke="none"/>${edges}${diagonals}${dots}</svg><div class="font-extrabold text-blue-800 text-lg">Изпъкнал ${n}-ъгълник</div><div class="text-sm text-slate-500">Натисни връх, за да откроиш диагоналите през него.</div></div>`;
+}
+
+function buildHardConditionVisualization(t) {
+    const or = `<div class="self-center font-extrabold text-amber-600 px-2">ИЛИ</div>`;
+    const and = `<div class="self-center font-extrabold text-blue-600 px-2">И</div>`;
+    switch (t.id) {
+        case 'a6': return `${conditionTokens('👦',t.n,'момчета','blue')}${or}${conditionTokens('👧',t.k,'момичета','rose')}<div class="self-center font-bold text-slate-600">Избери двама от една група</div>`;
+        case 'a7': return `${conditionTokens('⚪',t.n,'бели топки','slate')}${or}${conditionTokens('🔴',t.k,'червени топки','rose')}<div class="self-center font-bold text-slate-600">Извади 4 от един цвят</div>`;
+        case 'a8': return `${conditionTokens('📘',t.n,'алгебрични задачи','blue')}${conditionTokens('📐',t.k,'геометрични задачи','violet')}<div class="self-center font-bold text-slate-700">3 + 2 &nbsp; ИЛИ &nbsp; 2 + 3 задачи</div>`;
+        case 'a14': return `${conditionTokens('🧑‍🎓',t.n,'ученици','emerald')}<div class="self-center font-bold text-slate-700">Отбор от 2, 3 или 4 ученици</div>`;
+        case 'a15': return `${conditionTokens('🔢',t.n+1,'цифри от 0 нататък','blue')}<div class="p-4 bg-white border-2 border-amber-200 rounded-xl"><div class="font-bold mb-3">Четири позиции, без повторение</div>${conditionSlots(4,{3:'0/5'})}</div>`;
+        case 'm6': return `${conditionTokens('📚',t.n,'различни книги','blue')}<div class="p-4 bg-amber-50 border-2 border-amber-300 rounded-xl font-bold">${t.k} определени книги образуват един общ блок 🔗</div>`;
+        case 'm7': return `${conditionTokens('👧',t.n,'първи ред','rose')}${and}${conditionTokens('👦',t.k,'втори ред','blue')}`;
+        case 'm8': return `${conditionTokens('📘',t.n,'алгебрични задачи','blue')}${and}${conditionTokens('📐',t.k,'геометрични задачи','violet')}<div class="self-center font-bold">Избери 3 и 2</div>`;
+        case 'm9': return `${conditionTokens('👨',t.n,'мъже','blue')}${and}${conditionTokens('👩',t.k,'жени','rose')}<div class="self-center font-bold">Избери 2 и 3</div>`;
+        case 'm10': return `${conditionTokens('👨',t.n,'мъже','blue')}${conditionTokens('👩',t.k,'жени','rose')}<div class="p-4 bg-white border-2 border-violet-200 rounded-xl"><div class="font-bold mb-3">Председател · Заместник · Секретар</div><div class="text-rose-700 font-bold">Точно една длъжност се заема от жена</div></div>`;
+        case 'p7': return `<div class="p-5 bg-white border-2 border-blue-200 rounded-xl"><div class="font-bold mb-3">${t.n} различни букви</div>${conditionSlots(t.n,{0:'А', [t.n-1]:'Б'})}<div class="mt-3 text-rose-700 font-bold">Първата и последната са фиксирани</div></div>`;
+        case 'p8': return `<div class="p-5 bg-white border-2 border-blue-200 rounded-xl"><div class="font-bold mb-3">${t.n} ученици в редица</div>${conditionSlots(t.n,{[Math.floor(t.n/2)]:'⭐'})}<div class="mt-3 font-bold">Определеният ученик е в средата</div></div>`;
+        case 'p9': return `${conditionTokens('🚗',t.n,'автомобили','blue')}<div class="p-4 bg-amber-50 border-2 border-amber-300 rounded-xl font-bold">🚙 🔗 🚕 &nbsp; Двата конкретни автомобила са съседни</div>`;
+        case 'p14': return `<div class="p-5 bg-white border-2 border-blue-200 rounded-xl text-center"><div class="relative w-56 h-56 rounded-full border-4 border-blue-300 mx-auto">${Array.from({length:t.n},(_,i)=>{const a=i*2*Math.PI/t.n;return `<button type="button" class="hint-object color-shift absolute text-2xl" aria-pressed="false" style="left:${50+43*Math.cos(a)}%;top:${50+43*Math.sin(a)}%;transform:translate(-50%,-50%)">👤</button>`}).join('')}</div><div class="mt-3 font-bold">Подреждане около кръгла маса</div></div>`;
+        case 'p15': return `<div class="p-5 bg-white border-2 border-blue-200 rounded-xl"><div class="font-bold mb-3">${t.n} състезатели</div>${conditionSlots(t.n,{0:'🏁', [t.n-1]:'🔚'})}<div class="mt-3 font-bold">Двама определени заемат краищата</div></div>`;
+        case 'v6': return `${conditionTokens('🔢',t.n+1,'допустими цифри','blue')}<div class="p-4 bg-white border-2 border-blue-200 rounded-xl"><div class="font-bold mb-3">Четирицифрено число</div>${conditionSlots(4,{})}<div class="mt-3 font-bold text-rose-700">Първата ≠ 0 · без повторение</div></div>`;
+        case 'v7': return `${conditionTokens('🔢',t.n+1,'допустими цифри','blue')}<div class="p-4 bg-white border-2 border-blue-200 rounded-xl"><div class="font-bold mb-3">Четирицифрено четно число</div>${conditionSlots(4,{3:'четна'})}<div class="mt-3 font-bold text-rose-700">Първата ≠ 0 · без повторение</div></div>`;
+        case 'v8': return `${conditionTokens('🔣',t.n,'различни символи','violet')}<div class="p-4 bg-white border-2 border-violet-200 rounded-xl"><div class="font-bold mb-3">Код с ${t.k} позиции</div>${conditionSlots(t.k,{})}<div class="mt-3 font-bold text-rose-700">⭐ задължителният символ участва</div></div>`;
+        case 'v14': return `<div class="p-5 bg-white border-2 border-blue-200 rounded-xl"><div class="font-bold mb-3">${t.n} места · постави ${t.k} приятели</div><div class="flex flex-wrap gap-1">${Array.from({length:t.n},(_,i)=>`<button type="button" data-seat="${i}" data-occupant="" data-original="${i+1}" class="hint-seat w-11 h-12 border-2 border-slate-300 rounded-t-lg bg-slate-50 flex items-center justify-center text-sm font-bold" title="Постави приятел на място ${i+1}">${i+1}</button>`).join('')}</div><div class="mt-4 flex items-center gap-3 justify-center text-2xl"><span class="color-shift">🧑‍🦰 А</span><span class="text-rose-600 font-black">↮</span><span class="color-shift">🧑‍🦱 Б</span></div><div class="mt-2 font-bold text-rose-700">А и Б не са на съседни места</div></div>`;
+        case 'v15': return `${conditionTokens('🎨',t.n,'налични цветове','violet')}<div class="p-4 bg-white border-2 border-violet-200 rounded-xl"><div class="space-y-1">${Array.from({length:t.k},(_,i)=>`<div class="w-48 h-8 ${i===0?'bg-amber-200 border-2 border-rose-400':'bg-slate-100 border border-slate-300'} rounded flex items-center justify-center text-xs font-bold">${i===0?'един от 2 определени цвята':'различен цвят'}</div>`).join('')}</div></div>`;
+        case 'c6': return `${polygonCondition(t.n,'diagonals')}`;
+        case 'c7': return `${conditionTokens('⚽',t.n,'отбори','emerald')}<div class="p-4 bg-white border-2 border-emerald-200 rounded-xl font-bold">Всеки два отбора играят два пъти: 🏠 + ✈️</div>`;
+        case 'c8': return `${polygonCondition(t.n,'intersections')}<div class="self-center font-bold text-slate-700">Всички диагонали · без тройно пресичане</div>`;
+        case 'c9': return `${conditionTokens('🇬🇧',t.n,'английски език','blue')}${and}${conditionTokens('🇩🇪',t.k,'немски език','amber')}<div class="self-center font-bold">Група от 6: точно 3 + 3</div>`;
+        case 'c15': return `<div class="p-5 bg-white border-2 border-blue-200 rounded-xl text-center"><div class="relative w-64 h-48 bg-gradient-to-br from-blue-50 to-violet-50 rounded-xl border">${Array.from({length:Math.min(t.n,10)},(_,i)=>`<button type="button" class="hint-object color-shift absolute w-4 h-4 bg-blue-600 rounded-full" aria-pressed="false" aria-label="Маркирай точка ${i+1}" style="left:${10+(i*37)%80}%;top:${12+(i*53)%72}%"></button>`).join('')}<div class="absolute left-12 top-12 w-40 h-24 bg-violet-200/60 border-2 border-violet-400 -skew-x-12 flex items-center justify-center font-bold pointer-events-none">равнина през 3 точки</div></div><div class="mt-3 font-bold">${t.n} точки · никои 4 в една равнина</div></div>`;
+        default: return `<div class="p-5 bg-white border-2 border-slate-200 rounded-xl font-bold">Открий обектите, които се избират или подреждат, и отбележи ограниченията.</div>`;
+    }
+}
+
+function enableHintInteractions(container, currentTask) {
+    const interactionSpec = hintInteractionSpec(currentTask);
+    const interactionLabel = standardHintProfiles[currentTask.id]?.g?.[0]?.[1] || 'обектите';
+    const actionInstruction = currentTask.type === 'var'
+        ? `Натисни ${currentTask.k} различни ${interactionLabel} в желания ред. Те ще заемат последователно места от 1 до ${currentTask.k}.`
+        : currentTask.type === 'comb'
+            ? `Избери ${currentTask.k} различни ${interactionLabel}. Те ще образуват една група, без значение от реда.`
+            : 'Натискай върху обектите от схемата, за да построиш конкретен пример.';
+    container.insertAdjacentHTML('afterbegin', `<div class="mb-5 flex flex-wrap items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <div class="flex items-center gap-3">
+            <img src="assets/geo-assistant.png" alt="" class="geo-assistant geo-assistant-hint" aria-hidden="true" decoding="async">
+            <div><div class="font-bold text-amber-900">Гео: нека построим пример</div><div id="hint-status" class="text-sm text-amber-800" aria-live="polite">${actionInstruction}</div></div>
+        </div>
+        <div class="flex gap-2"><button type="button" id="hint-animate" class="px-4 py-2 bg-amber-500 text-white border border-amber-600 rounded-lg font-bold hover:bg-amber-600">▶ Анимирай</button><button type="button" id="hint-reset" class="px-4 py-2 bg-white border border-amber-300 rounded-lg font-bold text-amber-800 hover:bg-amber-100">↺ Нулирай</button></div>
+    </div>`);
+    const status = container.querySelector('#hint-status');
+    const workbench = container.querySelector('#hint-workbench');
+    const workbenchCount = container.querySelector('#hint-workbench-count');
+    let selectedObjects = [];
+
+    const renderWorkbench = () => {
+        if (!workbench) return;
+        if (interactionSpec.ordered && interactionSpec.target) {
+            workbench.innerHTML = Array.from({length: interactionSpec.target}, (_, index) => {
+                const item = selectedObjects[index];
+                return `<div class="hint-workbench-chip min-w-28 min-h-16 inline-flex items-center gap-2 rounded-xl border-2 ${item ? 'border-blue-300 bg-blue-50 text-slate-800' : 'border-dashed border-slate-300 bg-slate-50 text-slate-400'} px-3 py-2 font-bold">
+                    <span class="inline-flex w-7 h-7 shrink-0 items-center justify-center rounded-full ${item ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'} text-xs">${index + 1}</span>
+                    ${item ? `<span class="text-xl">${item.token}</span><span class="text-xs">${item.identity}</span>` : '<span class="text-sm">свободно място</span>'}
+                </div>`;
+            }).join('');
+        } else if (!selectedObjects.length) {
+            workbench.innerHTML = '<span class="hint-empty-message text-sm font-semibold text-slate-400">Натисни върху обектите от схемата, за да построиш пример.</span>';
+        } else {
+            workbench.innerHTML = selectedObjects.map((item, index) => `<span class="hint-workbench-chip inline-flex items-center gap-2 rounded-lg border-2 ${interactionSpec.ordered ? 'border-blue-200 bg-blue-50' : 'border-emerald-200 bg-emerald-50'} px-3 py-2 font-bold text-slate-700">
+                ${interactionSpec.ordered ? `<span class="inline-flex w-6 h-6 items-center justify-center rounded-full bg-blue-600 text-white text-xs">${index + 1}</span>` : ''}
+                <span class="text-xl">${item.token}</span><span class="text-xs">${item.identity}</span>
+            </span>`).join('');
+        }
+        if (workbenchCount) {
+            workbenchCount.innerText = interactionSpec.target ? `${selectedObjects.length} от ${interactionSpec.target}` : `${selectedObjects.length} избрани`;
+            workbenchCount.classList.toggle('bg-emerald-100', Boolean(interactionSpec.target && selectedObjects.length === interactionSpec.target));
+            workbenchCount.classList.toggle('text-emerald-800', Boolean(interactionSpec.target && selectedObjects.length === interactionSpec.target));
+        }
+    };
+    renderWorkbench();
+    container.querySelectorAll('.color-shift:not(.hint-object)').forEach(el => {
+        el.classList.add('hint-object');
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('aria-pressed', 'false');
+    });
+    container.querySelectorAll('.hint-object, .hint-slot, .hint-point, .hint-seat').forEach(el => el.classList.add('hint-sequence-item'));
+
+    const updateSelectionStatus = () => {
+        const selected = container.querySelectorAll('[data-hint-selected="true"]').length;
+        status.innerText = selected ? `Избрани обекти: ${selected}. Натисни отново върху обект, за да го премахнеш.` : actionInstruction;
+    };
+
+    container.querySelectorAll('.hint-object').forEach(el => {
+        const toggle = () => {
+            const active = el.dataset.hintSelected !== 'true';
+            if (active && interactionSpec.target && selectedObjects.length >= interactionSpec.target) {
+                status.innerText = `В работната област вече има необходимите ${interactionSpec.target} обекта. Премахни обект, за да го замениш.`;
+                return;
+            }
+            el.dataset.hintSelected = active ? 'true' : 'false';
+            el.setAttribute('aria-pressed', active ? 'true' : 'false');
+            el.classList.toggle('ring-4', active);
+            el.classList.toggle('ring-amber-400', active);
+            el.classList.toggle('bg-amber-100', active);
+            const sourceId = el.dataset.sourceId || `generated-${Array.from(container.querySelectorAll('.hint-object')).indexOf(el)}`;
+            if (active) {
+                selectedObjects.push({
+                    id: sourceId,
+                    token: el.dataset.token || el.innerText.trim() || '●',
+                    group: el.dataset.group || 'избран обект',
+                    identity: el.dataset.identity || el.dataset.group || 'избран обект'
+                });
+            } else {
+                selectedObjects = selectedObjects.filter(item => item.id !== sourceId);
+            }
+            renderWorkbench();
+            updateSelectionStatus();
+            if (interactionSpec.target && selectedObjects.length === interactionSpec.target) {
+                if (currentTask.type === 'add') {
+                    status.innerText = '✅ Избран е един допустим вариант от един от двата алтернативни случая.';
+                } else if (currentTask.type === 'mul') {
+                    status.innerText = `✅ Построен е един съставен резултат от ${interactionSpec.target} последователни избора.`;
+                } else {
+                    status.innerText = interactionSpec.ordered
+                        ? `✅ Построена е примерна подредба от ${interactionSpec.target} обекта. Номерата показват реда.`
+                        : `✅ Построена е примерна група от ${interactionSpec.target} обекта. Разместването им не създава нова група.`;
+                }
+            }
+        };
+        el.addEventListener('click', toggle);
+        el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
+
+    container.querySelectorAll('.hint-slot').forEach(slot => {
+        slot.dataset.state = '0';
+        slot.addEventListener('click', () => {
+            if (slot.dataset.fixed === 'true') {
+                status.innerText = 'Тази позиция е фиксирана от условието.';
+                slot.classList.add('shake');
+                setTimeout(() => slot.classList.remove('shake'), 400);
+                return;
+            }
+            const next = (Number(slot.dataset.state) + 1) % 3;
+            slot.dataset.state = String(next);
+            slot.innerText = next === 0 ? slot.dataset.original : next === 1 ? '✓' : '×';
+            slot.dataset.hintSelected = next ? 'true' : 'false';
+            slot.classList.toggle('border-emerald-400', next === 1);
+            slot.classList.toggle('bg-emerald-50', next === 1);
+            slot.classList.toggle('border-rose-400', next === 2);
+            slot.classList.toggle('bg-rose-50', next === 2);
+            updateSelectionStatus();
+        });
+    });
+
+    const updateConnectedDiagonals = () => {
+        const selectedPoints = new Set(Array.from(container.querySelectorAll('.hint-point[data-hint-selected="true"]'), p => p.dataset.point));
+        container.querySelectorAll('.hint-diagonal').forEach(line => {
+            line.classList.toggle('hint-connected', selectedPoints.has(line.dataset.from) || selectedPoints.has(line.dataset.to));
+        });
+    };
+    container.querySelectorAll('.hint-point').forEach(point => {
+        const toggle = () => {
+            const active = point.dataset.hintSelected !== 'true';
+            point.dataset.hintSelected = active ? 'true' : 'false';
+            point.setAttribute('fill', active ? '#f59e0b' : '#2563eb');
+            point.setAttribute('r', active ? '8' : '5');
+            updateConnectedDiagonals();
+            updateSelectionStatus();
+        };
+        point.addEventListener('click', toggle);
+        point.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
+
+    const seats = Array.from(container.querySelectorAll('.hint-seat'));
+    const updateSeats = () => {
+        const a = seats.findIndex(s => s.dataset.occupant === 'A');
+        const b = seats.findIndex(s => s.dataset.occupant === 'B');
+        const occupied = seats.filter(s => s.dataset.occupant).length;
+        if (a >= 0 && b >= 0) {
+            status.innerText = Math.abs(a-b) === 1 ? '⚠️ А и Б са съседни - условието е нарушено.' : '✅ А и Б не са съседни. Това разположение спазва условието.';
+        } else {
+            status.innerText = `Поставени приятели: ${occupied} от ${currentTask.k}. Първите двама са А и Б.`;
+        }
+    };
+    seats.forEach(seat => seat.addEventListener('click', () => {
+        if (seat.dataset.occupant) {
+            seat.dataset.occupant = '';
+            seat.innerText = seat.dataset.original;
+            seat.classList.remove('bg-amber-100','border-amber-400');
+        } else {
+            const occupied = seats.filter(s => s.dataset.occupant).length;
+            if (occupied >= currentTask.k) { status.innerText = `Вече са поставени всички ${currentTask.k} приятели.`; return; }
+            const hasA = seats.some(s => s.dataset.occupant === 'A');
+            const hasB = seats.some(s => s.dataset.occupant === 'B');
+            const occupant = !hasA ? 'A' : !hasB ? 'B' : '•';
+            seat.dataset.occupant = occupant;
+            seat.innerText = occupant === 'A' ? '🧑‍🦰 A' : occupant === 'B' ? '🧑‍🦱 Б' : '👤';
+            seat.classList.add('bg-amber-100','border-amber-400');
+        }
+        updateSeats();
+    }));
+
+    let animationTimers = [];
+    const runHintAnimation = () => {
+        animationTimers.forEach(clearTimeout);
+        animationTimers = [];
+        const items = Array.from(container.querySelectorAll('.hint-sequence-item'));
+        items.forEach(item => item.classList.remove('hint-revealed'));
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            items.forEach(item => item.classList.add('hint-revealed'));
+            status.innerText = 'Елементите са показани без анимация според системната настройка.';
+            return;
+        }
+        const delay = Math.max(28, Math.min(140, Math.floor(5200 / Math.max(items.length,1))));
+        status.innerText = 'Анимацията изгражда условието стъпка по стъпка…';
+        items.forEach((item, i) => animationTimers.push(setTimeout(() => {
+            item.classList.add('hint-revealed');
+            if (i === items.length-1) status.innerText = actionInstruction;
+        }, i * delay)));
+    };
+    container.querySelector('#hint-animate').addEventListener('click', runHintAnimation);
+
+    container.querySelector('#hint-reset').addEventListener('click', () => {
+        selectedObjects = [];
+        renderWorkbench();
+        container.querySelectorAll('.hint-object').forEach(el => { el.dataset.hintSelected='false'; el.setAttribute('aria-pressed','false'); el.classList.remove('ring-4','ring-amber-400','bg-amber-100'); });
+        container.querySelectorAll('.hint-slot').forEach(slot => {
+            slot.dataset.state='0'; slot.dataset.hintSelected='false'; slot.innerText=slot.dataset.original;
+            slot.classList.remove('border-emerald-400','bg-emerald-50');
+            if (slot.dataset.fixed === 'true') slot.classList.add('border-rose-400','bg-rose-50');
+            else slot.classList.remove('border-rose-400','bg-rose-50');
+        });
+        container.querySelectorAll('.hint-point').forEach(point => { point.dataset.hintSelected='false'; point.setAttribute('fill','#2563eb'); point.setAttribute('r','5'); });
+        container.querySelectorAll('.hint-diagonal').forEach(line => line.classList.remove('hint-connected'));
+        seats.forEach(seat => { seat.dataset.occupant=''; seat.innerText=seat.dataset.original; seat.classList.remove('bg-amber-100','border-amber-400'); });
+        status.innerText = `Подсказката е нулирана. ${actionInstruction}`;
+    });
+    setTimeout(runHintAnimation, 120);
+}
+
+function useJoker() {
+    if (taskJokerUses >= 1 || taskCompleted) return;
+    
+    deductPoints(2);
+    stats.jokers++;
+    taskJokerUses++;
+    
+    document.getElementById('joker-btn').disabled = true;
+    document.getElementById('joker-btn').classList.add('opacity-50');
+    
+    let container = document.getElementById('joker-container');
+    container.classList.remove('hidden');
+    
+    let html = buildHintGuide(task);
+    html += `<div class="flex items-center gap-4 overflow-x-auto pb-4 custom-scrollbar">`;
+    
+    if (task.isHard) {
+        html += buildHardConditionVisualization(task);
+    } else if (standardHintProfiles[task.id]) {
+        html += buildStandardConditionVisualization(task);
+    } else if (task.customAnswer && task.exprTerms) {
+        const word = task.exprOp === '+' ? 'СЛУЧАЙ' : task.exprOp === '-' ? 'ПРЕМАХВАМЕ' : 'СТЪПКА';
+        const joiner = task.exprOp === '*' ? 'И' : task.exprOp;
+        html += task.exprTerms.map((value, i) => `<button type="button" class="hint-object p-5 bg-white rounded-xl border-2 border-violet-200 shadow-sm text-center shrink-0" aria-pressed="false">
+            <div class="text-sm font-bold text-slate-500 mb-2">${word} ${i+1}</div>
+            <div class="text-3xl font-extrabold text-violet-700">${value}</div>
+        </button>${i < task.exprTerms.length - 1 ? `<div class="font-extrabold text-slate-400 text-xl px-2">${joiner}</div>` : ''}`).join('');
+    } else if (task.type === 'add') {
+        let optionCount1 = task.isHard ? task.exp1 : task.n;
+        let optionCount2 = task.isHard ? task.exp2 : task.k;
+        if (task.customTerms) {
+            html += task.terms.map((value, i) => `<div class="p-5 bg-white rounded-xl border-2 border-emerald-200 shadow-sm text-center shrink-0">
+                <div class="text-sm font-bold text-slate-500 mb-2">Възможности в случай ${i+1}</div>
+                <div class="text-3xl font-extrabold text-emerald-700">${value}</div>
+            </div>${i < task.terms.length - 1 ? '<div class="font-extrabold text-slate-400 text-xl px-2">ИЛИ</div>' : ''}`).join('');
+        } else if (task.isHard) {
+            html += `<div class="p-5 bg-white rounded-xl border-2 border-blue-200 shadow-sm text-center shrink-0">
+                <div class="text-sm font-bold text-slate-500 mb-2">Избор от първата група</div>
+                <div class="text-2xl font-serif font-bold"><i>C</i><sub>${task.n}</sub><sup>2</sup> = ${optionCount1}</div>
+            </div><div class="font-extrabold text-slate-400 text-xl px-2">ИЛИ</div>
+            <div class="p-5 bg-white rounded-xl border-2 border-rose-200 shadow-sm text-center shrink-0">
+                <div class="text-sm font-bold text-slate-500 mb-2">Избор от втората група</div>
+                <div class="text-2xl font-serif font-bold"><i>C</i><sub>${task.k}</sub><sup>2</sup> = ${optionCount2}</div>
+            </div><div class="font-extrabold text-emerald-700 text-2xl px-2">= ${optionCount1 + optionCount2}</div>`;
+        } else {
+            html += `<div class="flex gap-3 p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex-wrap justify-center">`;
+        for(let i=0; i<Math.min(optionCount1, 12); i++) {
+            let hue = (i * 45) % 360;
+            html += `<div class="w-16 h-16 flex flex-col items-center justify-center bg-slate-50 rounded-lg border text-3xl relative">
+                        <span class="color-shift" style="filter: hue-rotate(${hue}deg);">${task.items1[i%task.items1.length] || '🔵'}</span>
+                        <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.6rem] font-bold px-1 rounded-tl-md">А${i+1}</span>
+                     </div>`;
+        }
+        if(optionCount1 > 12) html += `<div class="font-bold text-slate-400 self-center">... още ${optionCount1 - 12}</div>`;
+        html += `</div><div class="font-extrabold text-slate-400 text-xl px-2">ИЛИ</div><div class="flex gap-3 p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex-wrap justify-center">`;
+        for(let i=0; i<Math.min(optionCount2, 12); i++) {
+            let hue = (i * 45) % 360;
+            html += `<div class="w-16 h-16 flex flex-col items-center justify-center bg-slate-50 rounded-lg border text-3xl relative">
+                        <span class="color-shift" style="filter: hue-rotate(${hue}deg);">${task.items2[i%task.items2.length] || '🔴'}</span>
+                        <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.6rem] font-bold px-1 rounded-tl-md">Б${i+1}</span>
+                     </div>`;
+        }
+        if(optionCount2 > 12) html += `<div class="font-bold text-slate-400 self-center">... още ${optionCount2 - 12}</div>`;
+            html += `</div>`;
+        }
+    } else if (task.type === 'mul' && task.terms.length > 2) {
+        html += task.terms.map((value, i) => `<button type="button" class="hint-object p-5 bg-white rounded-xl border-2 border-blue-200 shadow-sm text-center shrink-0" aria-pressed="false">
+            <div class="text-sm font-bold text-slate-500 mb-2">Избор на стъпка ${i+1}</div>
+            <div class="text-3xl font-extrabold text-blue-700">${value}</div>
+        </button>${i < task.terms.length - 1 ? '<div class="font-extrabold text-slate-400 text-xl px-2">И</div>' : ''}`).join('');
+    } else if (task.type === 'mul') {
+        let maxExp1 = task.type === 'var' ? task.n : task.exp1;
+        let maxExp2 = task.type === 'var' ? task.n-1 : task.exp2;
+        
+        for(let i=0; i<Math.min(maxExp1, 4); i++) {
+            for(let j=0; j<Math.min(maxExp2, 4); j++) {
+                if(task.type === 'var' && i === j) continue;
+                let hue1 = (i * 45) % 360;
+                let hue2 = (j * 45) % 360;
+                html += `<div class="flex items-center p-3 bg-white rounded-xl border border-slate-200 shrink-0 shadow-sm">
+                    <div class="w-12 h-12 flex items-center justify-center text-4xl relative">
+                        <span class="color-shift" style="filter: hue-rotate(${hue1}deg);">${task.items1[i%task.items1.length] || '🟩'}</span>
+                        <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.5rem] font-bold px-1 rounded-tl-md">А${i+1}</span>
+                    </div>
+                    <div class="text-sm font-bold text-slate-400 mx-2 bg-slate-100 px-2 py-1 rounded">И</div>
+                    <div class="w-12 h-12 flex items-center justify-center text-4xl relative">
+                        <span class="color-shift" style="filter: hue-rotate(${hue2}deg);">${task.items2[j%task.items2.length] || '🟨'}</span>
+                        <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.5rem] font-bold px-1 rounded-tl-md">Б${j+1}</span>
+                    </div>
+                </div>`;
+            }
+        }
+        if(maxExp1 > 4 || maxExp2 > 4) html += `<div class="font-bold text-slate-400 ml-4 text-2xl tracking-widest">...</div>`;
+    } else if (task.type === 'perm') {
+        for(let i=0; i<Math.min(task.ans, 5); i++) {
+            html += `<div class="flex gap-2 p-3 bg-white rounded-xl border border-slate-200 shrink-0 shadow-sm">`;
+            let arr = Array.from({length: task.exp1}, (_, idx) => idx);
+            for(let k=0; k<i; k++) arr.push(arr.shift());
+            for(let j=0; j<task.exp1; j++) {
+                let hue = (arr[j] * 45) % 360;
+                html += `<div class="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-lg border text-3xl relative">
+                    <span class="color-shift" style="filter: hue-rotate(${hue}deg);">${task.items1[arr[j]%task.items1.length] || '🔶'}</span>
+                    <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.5rem] font-bold px-1 rounded-tl-md">А${arr[j]+1}</span>
+                </div>`;
+            }
+            html += `</div>`;
+        }
+        if(task.ans > 5) html += `<div class="font-bold text-slate-400 ml-4 text-2xl tracking-widest">...</div>`;
+    } else if (task.type === 'var') {
+        let count = 0;
+        for(let i=0; i<task.n && count<5; i++) {
+            for(let j=0; j<task.n && count<5; j++) {
+                if(i===j) continue;
+                html += `<div class="flex gap-2 p-3 bg-white rounded-xl border border-slate-200 shrink-0 shadow-sm">`;
+                let hue1 = (i * 45) % 360;
+                let hue2 = (j * 45) % 360;
+                html += `<div class="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-lg border text-3xl relative">
+                    <span class="color-shift" style="filter: hue-rotate(${hue1}deg);">${task.items1[i%task.items1.length] || '💠'}</span>
+                    <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.5rem] font-bold px-1 rounded-tl-md">А${i+1}</span>
+                </div>`;
+                html += `<div class="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-lg border text-3xl relative">
+                    <span class="color-shift" style="filter: hue-rotate(${hue2}deg);">${task.items1[j%task.items1.length] || '💠'}</span>
+                    <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.5rem] font-bold px-1 rounded-tl-md">А${j+1}</span>
+                </div>`;
+                if(task.k > 2) html += `<div class="w-12 h-12 flex items-center justify-center bg-slate-50 border-dashed border-2 border-slate-300 rounded-lg"></div>`;
+                html += `</div>`;
+                count++;
+            }
+        }
+        if(task.ans > 5) html += `<div class="font-bold text-slate-400 ml-4 text-2xl tracking-widest">...</div>`;
+    } else if (task.type === 'comb') {
+        html += `<div class="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border-2 border-emerald-200 shadow-sm">`;
+        for(let i=0; i<task.k; i++) {
+            let hue = (i * 45) % 360;
+            html += `<div class="w-12 h-12 flex items-center justify-center bg-white rounded-lg shadow border border-emerald-100 text-3xl relative">
+                <span class="color-shift" style="filter: hue-rotate(${hue}deg);">${task.items1[i%task.items1.length] || '🔷'}</span>
+                <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.5rem] font-bold px-1 rounded-tl-md">А${i+1}</span>
+            </div>`;
+        }
+        html += `</div><div class="font-bold text-emerald-600 text-3xl px-2">=</div><div class="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border-2 border-emerald-200 shadow-sm">`;
+        let arr = Array.from({length: task.k}, (_, idx) => idx);
+        arr.push(arr.shift()); 
+        for(let i=0; i<task.k; i++) {
+            let hue = (arr[i] * 45) % 360;
+            html += `<div class="w-12 h-12 flex items-center justify-center bg-white rounded-lg shadow border border-emerald-100 text-3xl relative">
+                <span class="color-shift" style="filter: hue-rotate(${hue}deg);">${task.items1[arr[i]%task.items1.length] || '🔷'}</span>
+                <span class="absolute bottom-0 right-0 bg-slate-200 text-slate-600 text-[0.5rem] font-bold px-1 rounded-tl-md">А${arr[i]+1}</span>
+            </div>`;
+        }
+        html += `</div>`;
+    }
+    
+    html += `</div>`;
+    container.innerHTML = html;
+    enableHintInteractions(container, task);
+}
+
+// --- КРАЙ НА ИГРАТА И СТАТИСТИКА ---
+function endGame() {
+    clearInterval(timerInterval);
+    document.getElementById('app-container').classList.add('hidden');
+    document.getElementById('end-screen').classList.remove('hidden');
+    
+    let perc = stats.maxPoints > 0 ? Math.round((stats.points / stats.maxPoints) * 100) : 0;
+    
+    document.getElementById('end-tasks').innerText = stats.completedTasks;
+    document.getElementById('end-points').innerText = stats.points;
+    document.getElementById('end-max').innerText = stats.maxPoints;
+    document.getElementById('end-perc').innerText = perc + '%';
+    
+    let m = Math.floor(timeSpent / 60);
+    let s = timeSpent % 60;
+    document.getElementById('end-time').innerText = `${m} мин ${s} сек`;
+    document.getElementById('end-jokers').innerText = stats.jokers;
+    document.getElementById('end-calc').innerText = stats.calc;
+    
+    let fb = "";
+    if (stats.completedTasks === 0) fb = "Тренировката беше прекратена, преди да бъде завършена задача.";
+    else if (perc >= 90 && stats.jokers === 0) fb = "🥇 Отлично! Справяте се перфектно и напълно самостоятелно.";
+    else if (perc >= 70) fb = "🌟 Добра работа! Имате солидни знания, но е възможно още малко упражнение.";
+    else if (perc >= 50) fb = "📚 Задоволителен резултат. Препоръчително е да прегледате справочника.";
+    else fb = "💪 Резултатът показва нужда от преговор. Не се отказвайте, опитайте отново!";
+    
+    document.getElementById('end-feedback').innerText = fb;
+}
+
+// --- МОДАЛНИ ПРОЗОРЦИ И КАЛКУЛАТОР ---
+function openModal(id) {
+    lastFocusedElement = document.activeElement;
+    let modal = document.getElementById(id);
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.querySelector('[data-modal-close]')?.focus(), 0);
+}
+function openHelp() { openModal('help-modal'); }
+function openCalc() { 
+    openModal('calc-modal');
+    stats.calc++;
+}
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    if (lastFocusedElement) lastFocusedElement.focus();
+}
+function closeOnOutsideClick(event, id) { if(event.target.id === id) closeModal(id); }
+
+window.addEventListener('keydown', function(e) {
+    if(e.key === 'Escape') { closeModal('help-modal'); closeModal('calc-modal'); }
+});
+
+function updateCalcDisplay() { document.getElementById('calc-display').innerText = calcVal; }
+function showCalcExpression() {
+    calcVal = calcExpression ? calcExpression.replaceAll('*','×').replaceAll('/','÷') : '0';
+    updateCalcDisplay();
+}
+function calcInput(n) {
+    if(calcVal === 'Error' || calcVal === 'Infinity' || calcNew) { calcExpression = ''; calcNew = false; }
+    if(/[)!]$/.test(calcExpression)) calcExpression += '*';
+    if(calcExpression === '0') calcExpression = n;
+    else calcExpression += n;
+    showCalcExpression();
+}
+function calcOp(op) {
+    if(calcVal === 'Error' || calcVal === 'Infinity') return;
+    if(calcNew && calcExpression) calcNew = false;
+    if(!calcExpression) {
+        if(op === '-') { calcExpression = '-'; showCalcExpression(); }
+        return;
+    }
+    if(calcExpression.endsWith('(')) {
+        if(op === '-') calcExpression += '-';
+        showCalcExpression();
+        return;
+    }
+    if(/[+\-*/]$/.test(calcExpression)) calcExpression = calcExpression.slice(0,-1) + op;
+    else if(/[\d)!]$/.test(calcExpression)) calcExpression += op;
+    showCalcExpression();
+}
+function calcParen(paren) {
+    if(calcVal === 'Error' || calcVal === 'Infinity' || calcNew) { calcExpression = ''; calcNew = false; }
+    if(paren === '(') {
+        if(/[\d)!]$/.test(calcExpression)) calcExpression += '*';
+        calcExpression += '(';
+    } else {
+        const opens = (calcExpression.match(/\(/g) || []).length;
+        const closes = (calcExpression.match(/\)/g) || []).length;
+        if(opens > closes && /[\d)!]$/.test(calcExpression)) calcExpression += ')';
+    }
+    showCalcExpression();
+}
+function calcBackspace() {
+    if(calcVal === 'Error' || calcVal === 'Infinity') return calcClear();
+    calcNew = false;
+    calcExpression = calcExpression.slice(0,-1);
+    showCalcExpression();
+}
+function calcFact() {
+    if(calcVal === 'Error' || calcVal === 'Infinity') return;
+    if(/[\d)!]$/.test(calcExpression)) {
+        calcExpression += '!';
+        calcNew = false;
+        showCalcExpression();
+    }
+}
+function evaluateCalcExpression(expression) {
+    const tokens = [];
+    for(let i=0; i<expression.length;) {
+        const ch = expression[i];
+        if(/\s/.test(ch)) { i++; continue; }
+        if(/[\d.]/.test(ch)) {
+            let number = '';
+            while(i < expression.length && /[\d.]/.test(expression[i])) number += expression[i++];
+            if(!/^\d+(\.\d+)?$/.test(number)) throw new Error('Invalid number');
+            tokens.push(Number(number));
+            continue;
+        }
+        if('+-*/()!'.includes(ch)) { tokens.push(ch); i++; continue; }
+        throw new Error('Invalid character');
+    }
+
+    const output = [], operators = [];
+    const precedence = {'+':1,'-':1,'*':2,'/':2,'u-':3};
+    let expectOperand = true;
+    for(const rawToken of tokens) {
+        if(typeof rawToken === 'number') { output.push(rawToken); expectOperand = false; continue; }
+        if(rawToken === '(') { operators.push(rawToken); expectOperand = true; continue; }
+        if(rawToken === ')') {
+            if(expectOperand) throw new Error('Empty parentheses');
+            while(operators.length && operators.at(-1) !== '(') output.push(operators.pop());
+            if(operators.pop() !== '(') throw new Error('Unbalanced parentheses');
+            expectOperand = false;
+            continue;
+        }
+        if(rawToken === '!') {
+            if(expectOperand) throw new Error('Missing factorial operand');
+            output.push('!');
+            expectOperand = false;
+            continue;
+        }
+        let token = rawToken;
+        if(expectOperand) {
+            if(token !== '-') throw new Error('Missing operand');
+            token = 'u-';
+        }
+        while(operators.length && operators.at(-1) !== '(' && precedence[operators.at(-1)] >= precedence[token]) output.push(operators.pop());
+        operators.push(token);
+        expectOperand = true;
+    }
+    if(expectOperand && tokens.length) throw new Error('Incomplete expression');
+    while(operators.length) {
+        const op = operators.pop();
+        if(op === '(') throw new Error('Unbalanced parentheses');
+        output.push(op);
+    }
+
+    const stack = [];
+    for(const token of output) {
+        if(typeof token === 'number') { stack.push(token); continue; }
+        if(token === 'u-') { if(!stack.length) throw new Error('Missing operand'); stack.push(-stack.pop()); continue; }
+        if(token === '!') {
+            const n = stack.pop();
+            if(n === undefined || n < 0 || !Number.isInteger(n)) throw new Error('Invalid factorial');
+            stack.push(n > 170 ? Infinity : fact(n));
+            continue;
+        }
+        const b = stack.pop(), a = stack.pop();
+        if(a === undefined || b === undefined) throw new Error('Missing operand');
+        if(token === '+') stack.push(a+b);
+        else if(token === '-') stack.push(a-b);
+        else if(token === '*') stack.push(a*b);
+        else if(token === '/') {
+            if(b === 0) throw new Error('Division by zero');
+            stack.push(a/b);
+        }
+    }
+    if(stack.length !== 1) throw new Error('Invalid expression');
+    return stack[0];
+}
+function calcEq() {
+    if(!calcExpression || calcVal === 'Error') return;
+    try {
+        let result = evaluateCalcExpression(calcExpression);
+        if(Number.isFinite(result) && !Number.isInteger(result)) result = Number(result.toPrecision(12));
+        calcVal = String(result);
+        calcExpression = calcVal;
+    } catch(error) {
+        calcVal = 'Error';
+        calcExpression = '';
+    }
+    calcNew = true;
+    updateCalcDisplay();
+}
+function calcClear() { calcVal = '0'; calcExpression = ''; calcNew = true; updateCalcDisplay(); }
+
+</script>
+</body>
+</html>
