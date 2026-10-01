@@ -282,23 +282,23 @@
       <div class="intro-right">
         <div class="setup-row">
           <strong>Брой отбори:</strong>
-          <div class="segmented" id="teamCountSelector">
-            <button type="button" data-count="2">2 отбора</button>
-            <button type="button" class="active" data-count="3">3 отбора</button>
+          <div class="segmented" id="teamCountSelector" role="group" aria-label="Брой отбори">
+            <button type="button" data-count="2" aria-pressed="false">2 отбора</button>
+            <button type="button" class="active" data-count="3" aria-pressed="true">3 отбора</button>
           </div>
         </div>
         <div class="team-configs">
           <div class="team-config" data-config="0">
-            <label>Име на отбор 1</label><input value="АЛФА" maxlength="16" />
-            <label>Герой</label><select><option>🤖 Робот</option><option>🥷 Кибернинджа</option><option>🚀 Кораб</option><option>🐉 Мехадракон</option><option>🧑‍🚀 Изследовател</option></select>
+            <label for="teamName1">Име на отбор 1</label><input id="teamName1" value="АЛФА" maxlength="16" />
+            <label for="teamAvatar1">Герой на отбор 1</label><select id="teamAvatar1"><option>🤖 Робот</option><option>🥷 Кибернинджа</option><option>🚀 Кораб</option><option>🐉 Мехадракон</option><option>🧑‍🚀 Изследовател</option></select>
           </div>
           <div class="team-config" data-config="1">
-            <label>Име на отбор 2</label><input value="ОМЕГА" maxlength="16" />
-            <label>Герой</label><select><option>🥷 Кибернинджа</option><option>🤖 Робот</option><option>🚀 Кораб</option><option>🐉 Мехадракон</option><option>🧑‍🚀 Изследовател</option></select>
+            <label for="teamName2">Име на отбор 2</label><input id="teamName2" value="ОМЕГА" maxlength="16" />
+            <label for="teamAvatar2">Герой на отбор 2</label><select id="teamAvatar2"><option>🥷 Кибернинджа</option><option>🤖 Робот</option><option>🚀 Кораб</option><option>🐉 Мехадракон</option><option>🧑‍🚀 Изследовател</option></select>
           </div>
           <div class="team-config" data-config="2">
-            <label>Име на отбор 3</label><input value="НЕБУЛА" maxlength="16" />
-            <label>Герой</label><select><option>🐉 Мехадракон</option><option>🤖 Робот</option><option>🥷 Кибернинджа</option><option>🚀 Кораб</option><option>🧑‍🚀 Изследовател</option></select>
+            <label for="teamName3">Име на отбор 3</label><input id="teamName3" value="НЕБУЛА" maxlength="16" />
+            <label for="teamAvatar3">Герой на отбор 3</label><select id="teamAvatar3"><option>🐉 Мехадракон</option><option>🤖 Робот</option><option>🥷 Кибернинджа</option><option>🚀 Кораб</option><option>🧑‍🚀 Изследовател</option></select>
           </div>
         </div>
         <button class="start-btn" id="startGameBtn">ИНИЦИИРАЙ МИСИЯТА</button>
@@ -314,8 +314,8 @@
     <div class="world-title" id="worldTitle">НЕОНОВИЯТ ГРАД</div>
     <div class="top-actions">
       <button class="icon-btn" id="rulesBtn" title="Правила">❔ Правила</button>
-      <button class="icon-btn" id="soundBtn" title="Звук">🔊</button>
-      <button class="icon-btn" id="restartBtn" title="Нова игра">↻</button>
+      <button class="icon-btn" id="soundBtn" title="Звук" aria-label="Изключи звука">🔊</button>
+      <button class="icon-btn" id="restartBtn" title="Нова игра" aria-label="Започни нова игра">↻</button>
     </div>
   </header>
 
@@ -486,11 +486,11 @@
   }
   function sfx(kind){if(kind==='click')tone(520,.05,'square',.025);if(kind==='good'){tone(660,.08,'sine',.05);setTimeout(()=>tone(880,.12,'sine',.05),85)}if(kind==='bad')tone(170,.18,'sawtooth',.05);if(kind==='chest')[440,620,820].forEach((f,i)=>setTimeout(()=>tone(f,.12,'triangle',.045),i*95));if(kind==='move'){tone(330,.05,'square',.02);setTimeout(()=>tone(480,.06,'square',.02),90)}}
 
-  function setTeamCount(count){state.teamCount=count;[...els.teamCountSelector.querySelectorAll('button')].forEach(b=>b.classList.toggle('active',Number(b.dataset.count)===count));els.teamConfigs.forEach((c,i)=>c.classList.toggle('hidden',i>=count))}
+  function setTeamCount(count){state.teamCount=count;[...els.teamCountSelector.querySelectorAll('button')].forEach(b=>{const active=Number(b.dataset.count)===count;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});els.teamConfigs.forEach((c,i)=>c.classList.toggle('hidden',i>=count))}
   els.teamCountSelector.addEventListener('click',e=>{const b=e.target.closest('button');if(b)setTeamCount(Number(b.dataset.count))});
   document.getElementById('startGameBtn').addEventListener('click',startGame);
   document.getElementById('restartBtn').addEventListener('click',()=>location.reload());
-  document.getElementById('soundBtn').addEventListener('click',e=>{state.sound=!state.sound;e.currentTarget.textContent=state.sound?'🔊':'🔇';sfx('click')});
+  document.getElementById('soundBtn').addEventListener('click',e=>{state.sound=!state.sound;e.currentTarget.textContent=state.sound?'🔊':'🔇';e.currentTarget.setAttribute('aria-label',state.sound?'Изключи звука':'Включи звука');sfx('click')});
   document.getElementById('rulesBtn').addEventListener('click',showRules);
 
   function showRules(){

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Интерактивен Урок - Комбинаторика</title>
+    <title>Комбинаторика – два интерактивни урока</title>
     
     <!-- Зареждане на TailwindCSS за стиловете -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,10 +26,24 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.8); } 70% { transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes simulationPulse {
+            0% { transform: scale(.78); opacity: .35; }
+            55% { transform: scale(1.14); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
         
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
         .animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
         .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .simulation-step { animation: simulationPulse .55s cubic-bezier(.2,.9,.2,1) both; }
+        @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+        .animate-bump { display: inline-block; animation: bump 0.35s ease-out; }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        @media (prefers-reduced-motion: reduce) { .animate-bump, .animate-shake { animation: none !important; } }
+        @media (prefers-reduced-motion: reduce) {
+            .animate-fade-in, .animate-slide-up, .animate-pop-in, .simulation-step { animation-duration: .01ms !important; }
+        }
         button, .global-home {
             box-shadow: 0 5px 0 rgba(15, 23, 42, .24), 0 10px 20px rgba(15, 23, 42, .14) !important;
             translate: 0 0;
@@ -81,6 +95,55 @@
         const AlertCircle = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
         );
+
+        const useTimedAnimation = () => {
+          const timers = useRef([]);
+          const clearAnimation = () => {
+            timers.current.forEach(timer => clearTimeout(timer));
+            timers.current = [];
+          };
+          const schedule = (action, delay) => {
+            const timer = setTimeout(action, delay);
+            timers.current.push(timer);
+          };
+          useEffect(() => clearAnimation, []);
+          return { schedule, clearAnimation };
+        };
+
+        const SimulationControls = ({ onPlay, onReset, isAnimating, label = 'Анимирай примера' }) => (
+          <div className="flex flex-wrap gap-3 mt-4">
+            <button onClick={onPlay} disabled={isAnimating}
+              className={`rounded-xl px-5 py-3 font-extrabold text-white ${isAnimating ? 'bg-slate-400 cursor-wait' : 'bg-orange-500 hover:bg-orange-600'}`}>
+              {isAnimating ? '▶ Анимацията се изпълнява…' : `▶ ${label}`}
+            </button>
+            <button onClick={onReset}
+              className="rounded-xl px-5 py-3 font-extrabold bg-white text-slate-700 border border-slate-300 inline-flex items-center gap-2">
+              <RefreshCw size={18} /> Нулирай
+            </button>
+          </div>
+        );
+
+        const useSelectionAnimation = (allItems, needed, setAvailableItems, setCurrentSelection) => {
+          const [isAnimating, setIsAnimating] = useState(false);
+          const { schedule, clearAnimation } = useTimedAnimation();
+          const resetAnimatedSelection = () => {
+            clearAnimation();
+            setIsAnimating(false);
+            setCurrentSelection([]);
+            setAvailableItems(allItems);
+          };
+          const animateSelection = () => {
+            resetAnimatedSelection();
+            setIsAnimating(true);
+            allItems.slice(0, needed).forEach((item, index) => schedule(() => {
+              const chosen = allItems.slice(0, index + 1);
+              setCurrentSelection(chosen);
+              setAvailableItems(allItems.filter(value => !chosen.includes(value)));
+            }, index * 700));
+            schedule(() => setIsAnimating(false), needed * 700 + 150);
+          };
+          return { isAnimating, animateSelection, resetAnimatedSelection };
+        };
 
         // --- ЛОГА И НАЧАЛНА ИЛЮСТРАЦИЯ ---
         const LargeLogo = () => (
@@ -153,6 +216,8 @@
           const [selectedShirt, setSelectedShirt] = useState(null);
           const [selectedPants, setSelectedPants] = useState(null);
           const [outfits, setOutfits] = useState([]);
+          const [isAnimating, setIsAnimating] = useState(false);
+          const { schedule, clearAnimation } = useTimedAnimation();
 
           useEffect(() => {
             if (selectedShirt && selectedPants) {
@@ -174,6 +239,35 @@
             }
           }, [selectedShirt, selectedPants]);
 
+          const resetOutfitSimulation = () => {
+            clearAnimation();
+            setIsAnimating(false);
+            setSelectedShirt(null);
+            setSelectedPants(null);
+            setOutfits([]);
+          };
+
+          const animateOutfits = () => {
+            resetOutfitSimulation();
+            setIsAnimating(true);
+            const examples = shirts.flatMap(shirt => pants.map(pant => ({ shirt, pant })));
+            examples.forEach(({ shirt, pant }, index) => {
+              schedule(() => {
+                setSelectedShirt(shirt);
+                setSelectedPants(pant);
+                setOutfits(previous => {
+                  const outfit = shirt + pant;
+                  return previous.includes(outfit) ? previous : [...previous, outfit];
+                });
+              }, index * 750);
+            });
+            schedule(() => {
+              setSelectedShirt(null);
+              setSelectedPants(null);
+              setIsAnimating(false);
+            }, examples.length * 750);
+          };
+
           return (
             <div className="min-h-screen px-4 py-6 md:py-10 animate-fade-in">
               <div className="max-w-6xl mx-auto relative pb-32 md:pb-36">
@@ -181,29 +275,32 @@
 
                 <section className="bg-white -mt-5 md:-mt-8 relative z-10 mx-2 md:mx-8 p-6 md:p-9 rounded-3xl shadow-xl border border-gray-100 text-center">
                   <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-800 px-4 py-1.5 text-sm font-bold mb-4">
-                    Интерактивен урок за 8. клас
+                    Два интерактивни урока за 8. клас
                   </span>
                   <h1 className="text-3xl md:text-5xl font-extrabold text-blue-950 mb-4 tracking-tight">
-                    Пермутации, вариации и комбинации
+                    Комбинаторика
                   </h1>
                   <p className="text-gray-600 mb-5 text-lg md:text-xl leading-relaxed max-w-4xl mx-auto">
-                    В този урок ще откриете как систематично да преброявате възможностите, когато
-                    <strong> подреждате всички елементи</strong>, <strong>избирате част от тях и редът има значение</strong>
-                    или <strong>съставяте група, при която редът няма значение</strong>.
+                    Избери един от двата свързани урока. Първият изгражда основните правила за броене,
+                    а вторият ги прилага при пермутации, вариации и комбинации.
                   </p>
-                  <div className="grid sm:grid-cols-3 gap-3 max-w-4xl mx-auto mb-8 text-left">
-                    <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
-                      <div className="font-extrabold text-blue-800 mb-1">1. Пермутации</div>
-                      <div className="text-sm text-gray-600">Подреждаме всички дадени елементи.</div>
-                    </div>
-                    <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
-                      <div className="font-extrabold text-emerald-800 mb-1">2. Вариации</div>
-                      <div className="text-sm text-gray-600">Избираме и подреждаме част от елементите.</div>
-                    </div>
-                    <div className="rounded-2xl bg-purple-50 border border-purple-100 p-4">
-                      <div className="font-extrabold text-purple-800 mb-1">3. Комбинации</div>
-                      <div className="text-sm text-gray-600">Избираме група, без да отчитаме реда.</div>
-                    </div>
+                  <div className="grid md:grid-cols-2 gap-4 max-w-5xl mx-auto mb-8 text-left">
+                    <article className="rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-6">
+                      <span className="inline-flex rounded-full bg-amber-200 text-amber-900 px-3 py-1 text-xs font-black mb-3">УРОК 1</span>
+                      <h2 className="text-2xl font-extrabold text-amber-900 mb-2">Събиране и умножение на възможности</h2>
+                      <p className="text-gray-600 mb-5">Разпознаваме „ИЛИ“ и „И“, моделираме изборите и решаваме две интерактивни предизвикателства.</p>
+                      <button onClick={() => onStart('rules')} className="w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 font-extrabold">
+                        Започни урок 1
+                      </button>
+                    </article>
+                    <article className="rounded-3xl bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 p-6">
+                      <span className="inline-flex rounded-full bg-blue-200 text-blue-900 px-3 py-1 text-xs font-black mb-3">УРОК 2</span>
+                      <h2 className="text-2xl font-extrabold text-blue-950 mb-2">Пермутации, вариации и комбинации</h2>
+                      <p className="text-gray-600 mb-5">Подреждаме всички елементи, избираме и подреждаме част от тях или съставяме група.</p>
+                      <button onClick={() => onStart('models')} className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 font-extrabold">
+                        Започни урок 2
+                      </button>
+                    </article>
                   </div>
 
                   <div className="bg-blue-50 p-6 rounded-2xl mb-8 relative overflow-hidden max-w-3xl mx-auto">
@@ -211,7 +308,7 @@
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Trophy size={100} />
                   </div>
-                  <h3 className="font-bold text-xl text-blue-800 mb-4">Въведение: Създай тоалет</h3>
+                  <h3 className="font-bold text-xl text-blue-800 mb-4">Опитай пример от урок 1: Създай тоалет</h3>
                   <p className="text-sm text-blue-600 mb-4">
                     Разполагаш с 3 горни дрехи и 2 долни. Избери по една от всяка, за да създадеш тоалет. 
                     Колко различни тоалета можеш да направиш?
@@ -222,7 +319,9 @@
                       {shirts.map(shirt => (
                         <button 
                           key={shirt} 
+                          disabled={isAnimating}
                           onClick={() => setSelectedShirt(shirt)}
+                          aria-label={`Избери горна дреха ${shirt}`}
                           className={`text-4xl p-2 rounded-lg transition-all ${selectedShirt === shirt ? 'bg-blue-200 scale-110' : 'hover:bg-gray-100'}`}
                         >
                           {shirt}
@@ -234,13 +333,20 @@
                       {pants.map(pant => (
                         <button 
                           key={pant} 
+                          disabled={isAnimating}
                           onClick={() => setSelectedPants(pant)}
+                          aria-label={`Избери долна дреха ${pant}`}
                           className={`text-4xl p-2 rounded-lg transition-all ${selectedPants === pant ? 'bg-blue-200 scale-110' : 'hover:bg-gray-100'}`}
                         >
                           {pant}
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="flex justify-center mb-6">
+                    <SimulationControls onPlay={animateOutfits} onReset={resetOutfitSimulation}
+                      isAnimating={isAnimating} label="Покажи всичките 6 тоалета" />
                   </div>
 
                   <div className="bg-white/60 p-4 rounded-xl text-left border border-white">
@@ -264,17 +370,581 @@
                   )}
                 </div>
 
-                <button 
-                  onClick={onStart}
-                  className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-blue-600 font-pj rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 text-lg shadow-lg hover:shadow-xl hover:-translate-y-1"
-                >
-                  Започни Урока
-                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </button>
                 </section>
 
                 <LargeLogo />
               </div>
+            </div>
+          );
+        };
+
+        // --- АВТОМАТИЧНО ПОДРЕЖДАНЕ: ОБЩИ ПОМОЩНИЦИ ---
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+        const prefersReducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Прелита емоджи от елемента fromEl до елемента toEl по дъга
+        const flyEmoji = (fromEl, toEl, content, ms, hideSource = true) => new Promise(resolve => {
+          if (!fromEl || !toEl || ms <= 0 || prefersReducedMotion()) { resolve(); return; }
+          const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+          const el = document.createElement('div');
+          el.textContent = content;
+          Object.assign(el.style, {
+            position: 'fixed', left: `${a.left + a.width / 2}px`, top: `${a.top + a.height / 2}px`,
+            fontSize: getComputedStyle(fromEl).fontSize, lineHeight: '1', zIndex: 9999, pointerEvents: 'none',
+            filter: 'drop-shadow(0 10px 12px rgba(15,23,42,.28))'
+          });
+          document.body.appendChild(el);
+          if (hideSource) fromEl.style.visibility = 'hidden';
+          const dx = (b.left + b.width / 2) - (a.left + a.width / 2);
+          const dy = (b.top + b.height / 2) - (a.top + a.height / 2);
+          const lift = -Math.max(50, Math.abs(dx) * 0.25);
+          const done = () => { el.remove(); resolve(); };
+          if (el.animate) {
+            const anim = el.animate([
+              { transform: 'translate(-50%, -50%) scale(1) rotate(0deg)' },
+              { transform: `translate(calc(-50% + ${dx / 2}px), calc(-50% + ${dy / 2 + lift}px)) scale(1.35) rotate(-12deg)`, offset: 0.5 },
+              { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1) rotate(0deg)` }
+            ], { duration: ms, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
+            anim.onfinish = done; anim.oncancel = done;
+          } else {
+            setTimeout(done, ms);
+          }
+        });
+
+        // Всички подредби/групи от k елемента
+        const arrangementsOf = (items, k, ordered) => {
+          const out = [];
+          const rec = (pref, start) => {
+            if (pref.length === k) { out.push(pref); return; }
+            items.forEach((it, i) => {
+              if (pref.includes(it)) return;
+              if (!ordered && i < start) return;
+              rec([...pref, it], i + 1);
+            });
+          };
+          rec([], 0);
+          return out;
+        };
+
+        const SPEEDS = [
+          { id: 'slow', label: 'Бавно', ms: 1100 },
+          { id: 'normal', label: 'Нормално', ms: 650 },
+          { id: 'fast', label: 'Бързо', ms: 320 }
+        ];
+
+        const AutoControls = ({ title = 'Автоматично подреждане:', running, onRun, onStep, onPause, onClear, speed, setSpeed, disabled, solved, tone }) => {
+          const tones = {
+            blue: 'bg-blue-600 hover:bg-blue-700', emerald: 'bg-emerald-600 hover:bg-emerald-700', purple: 'bg-purple-600 hover:bg-purple-700'
+          };
+          return (
+            <div className="flex flex-wrap items-center gap-2 mb-5 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+              <span className="text-sm font-bold text-slate-600 mr-1">{title}</span>
+              {!running ? (
+                <>
+                  <button onClick={onRun} disabled={disabled || solved} className={`px-4 py-2 rounded-full text-white font-bold disabled:bg-gray-300 ${tones[tone]}`}>▶ Подреди всички</button>
+                  <button onClick={onStep} disabled={disabled || solved} className="px-4 py-2 rounded-full bg-white border border-slate-300 text-slate-700 font-bold disabled:text-gray-400">⏭ Една стъпка</button>
+                </>
+              ) : (
+                <button onClick={onPause} className="px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold">⏸ Пауза</button>
+              )}
+              <div className="flex rounded-full bg-white border border-slate-300 p-0.5 ml-auto" role="group" aria-label="Скорост">
+                {SPEEDS.map(sp => (
+                  <button key={sp.id} onClick={() => setSpeed(sp.id)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-bold ${speed === sp.id ? 'bg-slate-800 text-white' : 'text-slate-600'}`}
+                    style={{ boxShadow: 'none' }}>{sp.label}</button>
+                ))}
+              </div>
+              <button onClick={onClear} disabled={running || disabled} className="px-3 py-2 rounded-full bg-white border border-slate-300 text-slate-600 font-bold flex items-center gap-1 disabled:text-gray-400"><RefreshCw size={15} /> Изчисти</button>
+            </div>
+          );
+        };
+
+        const Stepper = ({ label, value, min, max, onChange, disabled, tone = 'teal' }) => {
+          const tones = {
+            teal: 'bg-teal-600 hover:bg-teal-700', amber: 'bg-amber-500 hover:bg-amber-600',
+            blue: 'bg-blue-600 hover:bg-blue-700', cyan: 'bg-cyan-600 hover:bg-cyan-700', emerald: 'bg-emerald-600 hover:bg-emerald-700', indigo: 'bg-indigo-600 hover:bg-indigo-700', rose: 'bg-rose-500 hover:bg-rose-600'
+          };
+          const btn = `w-9 h-9 rounded-full text-white text-xl font-extrabold flex items-center justify-center ${tones[tone]} disabled:bg-gray-300 disabled:cursor-not-allowed`;
+          return (
+            <div className="flex items-center gap-2 bg-white rounded-full pl-4 pr-1.5 py-1.5 border border-gray-200">
+              <span className="text-sm font-bold text-gray-600 mr-1">{label}</span>
+              <button aria-label={`Намали ${label}`} className={btn} disabled={disabled || value <= min} onClick={() => onChange(value - 1)}>−</button>
+              <span key={value} className="w-8 text-center text-xl font-extrabold text-gray-800 animate-bump">{value}</span>
+              <button aria-label={`Увеличи ${label}`} className={btn} disabled={disabled || value >= max} onClick={() => onChange(value + 1)}>+</button>
+            </div>
+          );
+        };
+
+        const CountingRules = ({ onNext, onComplete }) => {
+          const [checkedRule, setCheckedRule] = useState(null);
+          const [challengeAnswers, setChallengeAnswers] = useState({ add: null, multiply: null });
+          const [activeChallenge, setActiveChallenge] = useState('add');
+          const [exploredAlternatives, setExploredAlternatives] = useState([]);
+          const [selectedRoute, setSelectedRoute] = useState(null);
+          const [selectedTransport, setSelectedTransport] = useState(null);
+          const [travelPairs, setTravelPairs] = useState([]);
+          const [isAnimating, setIsAnimating] = useState(null);
+
+          // Променлив брой (по подразбиране като в оригиналната задача)
+          const [theaterCount, setTheaterCount] = useState(7);
+          const [choirCount, setChoirCount] = useState(5);
+          const [routeCount, setRouteCount] = useState(3);
+          const [transportCount, setTransportCount] = useState(2);
+          const TRANSPORT_POOL = ['🚌', '🚆', '🚗', '🚲'];
+          const TRANSPORT_NAMES = { '🚌': 'автобус', '🚆': 'влак', '🚗': 'кола', '🚲': 'велосипед' };
+          const theaterIds = Array.from({ length: theaterCount }, (_, i) => `Т${i + 1}`);
+          const choirIds = Array.from({ length: choirCount }, (_, i) => `Х${i + 1}`);
+          const allAlternatives = [...theaterIds, ...choirIds];
+          const routes = Array.from({ length: routeCount }, (_, i) => i + 1);
+          const transports = TRANSPORT_POOL.slice(0, transportCount);
+          const addAnswer = theaterCount + choirCount;
+          const multiplyAnswer = routeCount * transportCount;
+          // Верният отговор е първият в списъка; добавяме типичните грешки, после резервни числа
+          const pickOptions = (main, spare) => {
+            const out = [];
+            [...main, ...spare].forEach(v => { if (v > 0 && !out.includes(v) && out.length < 3) out.push(v); });
+            return out.sort((a, b) => a - b);
+          };
+          const addOptions = pickOptions([addAnswer, theaterCount * choirCount, 2], [addAnswer + 1, addAnswer + 2, addAnswer - 1]);
+          const multiplyOptions = pickOptions([multiplyAnswer, routeCount + transportCount, multiplyAnswer + routeCount], [multiplyAnswer + 1, multiplyAnswer + 2, multiplyAnswer - 1]);
+
+          const [addDone, setAddDone] = useState(false);
+          const [multiplyDone, setMultiplyDone] = useState(false);
+          const solvedChallenges = Number(addDone) + Number(multiplyDone);
+          const addSolved = addDone;
+          const multiplySolved = multiplyDone;
+          const chooseChallengeAnswer = (challenge, answer) => {
+            setChallengeAnswers(previous => ({ ...previous, [challenge]: answer }));
+            if (challenge === 'add' && answer === addAnswer) setAddDone(true);
+            if (challenge === 'multiply' && answer === multiplyAnswer) setMultiplyDone(true);
+          };
+          const toggleAlternative = (id) => {
+            if (isAnimating) return;
+            setExploredAlternatives(previous => previous.includes(id) ? previous.filter(item => item !== id) : [...previous, id]);
+          };
+
+          // --- Автоматична симулация с прелитане ---
+          const rulesRootRef = useRef(null);
+          const aliveRef = useRef(true);
+          const stopRef = useRef(false);
+          const exploredRef = useRef([]);
+          const pairsRef = useRef([]);
+          const [speed, setSpeed] = useState('normal');
+          const speedRef = useRef('normal');
+          useEffect(() => { speedRef.current = speed; }, [speed]);
+          useEffect(() => { exploredRef.current = exploredAlternatives; }, [exploredAlternatives]);
+          useEffect(() => { pairsRef.current = travelPairs; }, [travelPairs]);
+          useEffect(() => () => { aliveRef.current = false; stopRef.current = true; }, []);
+          const currentMs = () => SPEEDS.find(x => x.id === speedRef.current).ms;
+          const q = (sel) => rulesRootRef.current && rulesRootRef.current.querySelector(sel);
+
+          const resetAlternatives = () => {
+            stopRef.current = true;
+            setIsAnimating(null);
+            exploredRef.current = [];
+            setExploredAlternatives([]);
+          };
+          const animateAlternatives = async (continuous = true) => {
+            stopRef.current = false;
+            setIsAnimating('add');
+            while (aliveRef.current) {
+              const next = allAlternatives.find(id => !exploredRef.current.includes(id));
+              if (!next) break;
+              const ms = currentMs();
+              await flyEmoji(q(`[data-alt="${next}"]`), q(`[data-altslot="${next}"]`), next, ms * 0.8, false);
+              if (!aliveRef.current) return;
+              exploredRef.current = [...exploredRef.current, next];
+              setExploredAlternatives(exploredRef.current);
+              await sleep(ms * 0.25);
+              if (!continuous || stopRef.current) break;
+            }
+            if (aliveRef.current) setIsAnimating(null);
+          };
+
+          const resetTravel = () => {
+            stopRef.current = true;
+            setIsAnimating(null);
+            setSelectedRoute(null);
+            setSelectedTransport(null);
+            pairsRef.current = [];
+            setTravelPairs([]);
+          };
+          const animateTravel = async (continuous = true) => {
+            stopRef.current = false;
+            setIsAnimating('multiply');
+            const all = routes.flatMap(route => transports.map(transport => ({ route, transport })));
+            while (aliveRef.current) {
+              const next = all.find(p => !pairsRef.current.includes(`${p.route}-${p.transport}`));
+              if (!next) break;
+              const ms = currentMs();
+              setSelectedTransport(null);
+              setSelectedRoute(next.route);
+              await sleep(ms * 0.45);
+              if (!aliveRef.current) return;
+              await flyEmoji(q(`[data-transport="${next.transport}"]`), q(`[data-pair="${next.route}-${next.transport}"]`), next.transport, ms, false);
+              if (!aliveRef.current) return;
+              setSelectedTransport(next.transport);
+              pairsRef.current = [...pairsRef.current, `${next.route}-${next.transport}`];
+              await sleep(ms * 0.35);
+              if (!continuous || stopRef.current) break;
+            }
+            if (aliveRef.current) {
+              setSelectedRoute(null);
+              setSelectedTransport(null);
+              setIsAnimating(null);
+            }
+          };
+
+          useEffect(() => {
+            if (!selectedRoute || !selectedTransport) return;
+            const pair = `${selectedRoute}-${selectedTransport}`;
+            setTravelPairs(previous => previous.includes(pair) ? previous : [...previous, pair]);
+          }, [selectedRoute, selectedTransport]);
+
+          // При смяна на броя започваме задачата отначало (напредъкът в урока се запазва)
+          useEffect(() => { resetAlternatives(); setChallengeAnswers(prev => ({ ...prev, add: null })); }, [theaterCount, choirCount]);
+          useEffect(() => { resetTravel(); setChallengeAnswers(prev => ({ ...prev, multiply: null })); }, [routeCount, transportCount]);
+
+          useEffect(() => {
+            if (solvedChallenges === 2) onComplete?.();
+          }, [solvedChallenges, onComplete]);
+
+          return (
+            <div ref={rulesRootRef} className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-amber-500 animate-slide-up">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-7">
+                <div>
+                  <span className="inline-flex rounded-full bg-amber-100 text-amber-800 px-3 py-1 text-sm font-bold mb-3">Основа на комбинаториката</span>
+                  <h3 className="text-3xl font-extrabold text-amber-700 mb-3">
+                    {solvedChallenges === 2 ? 'Събиране и умножение на възможности' : 'Открий двете основни правила'}
+                  </h3>
+                  <p className="text-gray-600 text-lg max-w-3xl">
+                    Преди да използваме формулите за пермутации, вариации и комбинации, трябва да разпознаваме
+                    дали изборите са <strong>алтернативни</strong>, или се извършват <strong>последователно</strong>.
+                  </p>
+                </div>
+                <div className="text-7xl" aria-hidden="true">🧭</div>
+              </div>
+
+              <div className="mb-7 rounded-2xl bg-slate-100 border border-slate-200 p-4">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <strong className="text-slate-800">Напредък в урока</strong>
+                  <span className="font-extrabold text-amber-700">{solvedChallenges} / 2 предизвикателства</span>
+                </div>
+                <div className="h-3 rounded-full bg-white overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500" style={{width: `${solvedChallenges * 50}%`}}></div>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-3 mb-7">
+                <button onClick={() => setActiveChallenge('add')}
+                  className={`rounded-2xl px-4 py-4 font-extrabold flex items-center justify-center gap-2 ${activeChallenge === 'add' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-blue-900 border border-blue-200'}`}>
+                  {addSolved ? <CheckCircle size={19} /> : <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 grid place-items-center text-sm">1</span>}
+                  {addSolved ? 'Първо правило' : 'Предизвикателство'}
+                </button>
+                <button disabled={!addSolved} onClick={() => addSolved && setActiveChallenge('multiply')}
+                  className={`rounded-2xl px-4 py-4 font-extrabold flex items-center justify-center gap-2 ${activeChallenge === 'multiply' ? 'bg-emerald-600 text-white shadow-md' : addSolved ? 'bg-white text-emerald-900 border border-emerald-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
+                  {multiplySolved ? <CheckCircle size={19} /> : <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 grid place-items-center text-sm">2</span>}
+                  {multiplySolved ? 'Второ правило' : addSolved ? 'Предизвикателство' : 'Заключено'}
+                </button>
+                <button disabled={solvedChallenges < 2} onClick={() => solvedChallenges === 2 && setActiveChallenge('summary')}
+                  className={`rounded-2xl px-4 py-4 font-extrabold flex items-center justify-center gap-2 ${activeChallenge === 'summary' ? 'bg-amber-500 text-white shadow-md' : solvedChallenges === 2 ? 'bg-white text-amber-900 border border-amber-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
+                  <span className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 grid place-items-center text-sm">3</span>
+                  {solvedChallenges === 2 ? 'Обобщение' : 'Заключено'}
+                </button>
+              </div>
+
+              {activeChallenge === 'summary' && (
+              <div className="grid lg:grid-cols-2 gap-6 animate-fade-in">
+                <article className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="w-12 h-12 rounded-2xl bg-blue-600 text-white grid place-items-center text-2xl font-black">+</span>
+                    <div>
+                      <h4 className="text-2xl font-extrabold text-blue-900">Правило за събиране</h4>
+                      <p className="text-blue-700 font-bold">Ключова дума: „ИЛИ“</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed mb-5">
+                    Ако един избор може да се направи по <strong>m</strong> начина от група A
+                    <strong> или</strong> по <strong>n</strong> начина от отделна група B, като двата случая не се припокриват,
+                    общият брой възможности е:
+                  </p>
+                  <div className="bg-white rounded-2xl border border-blue-100 p-4 text-center text-2xl text-blue-900 mb-5">
+                    <MathFormula tex="m+n" display={true} />
+                  </div>
+                  <div className="rounded-2xl bg-white/80 border border-white p-4">
+                    <p className="font-bold text-blue-900 mb-3">Пример: избираме един представител</p>
+                    <div className="flex flex-wrap items-center justify-center gap-3 text-center">
+                      <span className="rounded-xl bg-blue-100 px-4 py-3"><strong>28</strong><br/><small>от 8.a клас</small></span>
+                      <span className="text-2xl font-black text-blue-500">+</span>
+                      <span className="rounded-xl bg-cyan-100 px-4 py-3"><strong>30</strong><br/><small>от 8.б клас</small></span>
+                      <span className="text-2xl font-black text-blue-500">=</span>
+                      <span className="rounded-xl bg-blue-700 text-white px-4 py-3"><strong>58</strong><br/><small>възможности</small></span>
+                    </div>
+                  </div>
+                </article>
+
+                <article className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="w-12 h-12 rounded-2xl bg-emerald-600 text-white grid place-items-center text-2xl font-black">×</span>
+                    <div>
+                      <h4 className="text-2xl font-extrabold text-emerald-900">Правило за умножение</h4>
+                      <p className="text-emerald-700 font-bold">Ключова дума: „И“</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed mb-5">
+                    Ако първата стъпка има <strong>m</strong> възможности и за всеки неин избор
+                    втората стъпка има <strong>n</strong> възможности, цялото действие може да се извърши по:
+                  </p>
+                  <div className="bg-white rounded-2xl border border-emerald-100 p-4 text-center text-2xl text-emerald-900 mb-5">
+                    <MathFormula tex="m \cdot n" display={true} />
+                  </div>
+                  <div className="rounded-2xl bg-white/80 border border-white p-4">
+                    <p className="font-bold text-emerald-900 mb-3">Пример: съставяме тоалет</p>
+                    <div className="flex flex-wrap items-center justify-center gap-3 text-center">
+                      <span className="rounded-xl bg-emerald-100 px-4 py-3"><strong>3</strong><br/><small>горни дрехи</small></span>
+                      <span className="text-2xl font-black text-emerald-500">×</span>
+                      <span className="rounded-xl bg-teal-100 px-4 py-3"><strong>2</strong><br/><small>долни дрехи</small></span>
+                      <span className="text-2xl font-black text-emerald-500">=</span>
+                      <span className="rounded-xl bg-emerald-700 text-white px-4 py-3"><strong>6</strong><br/><small>тоалета</small></span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+              )}
+
+              <div className="mt-8 space-y-6">
+                {activeChallenge === 'add' && (
+                <section className="rounded-3xl border-t-4 border-blue-500 bg-blue-50 p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="w-10 h-10 rounded-full bg-blue-600 text-white grid place-items-center font-black">1</span>
+                    <h4 className="text-2xl font-extrabold text-blue-900">Предизвикателство: Избор на участник</h4>
+                  </div>
+                  <p className="text-gray-700 text-lg mb-4">
+                    За училищен празник трябва да бъде избран <strong>един</strong> участник:
+                    някой от <strong>{theaterCount}</strong> {theaterCount === 1 ? 'ученик' : 'ученици'} в театралната група <strong>или</strong> някой от <strong>{choirCount}</strong> {choirCount === 1 ? 'ученик' : 'ученици'} в хора.
+                    По колко начина може да се направи изборът?
+                  </p>
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    <Stepper label="Театрална група" value={theaterCount} min={1} max={10} onChange={setTheaterCount} disabled={!!isAnimating} tone="blue" />
+                    <Stepper label="Хор" value={choirCount} min={1} max={10} onChange={setChoirCount} disabled={!!isAnimating} tone="cyan" />
+                  </div>
+                  <div className="rounded-2xl bg-white border border-blue-200 p-4 mb-5">
+                    <div className="font-bold text-blue-900 mb-3">Симулация: натискай учениците, за да разгледаш възможните единични избори</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {theaterIds.map((id, i) => (
+                        <span key={id} className="inline-block animate-pop-in" style={{ animationDelay: `${i * 40}ms`, opacity: 0 }}>
+                          <button data-alt={id} onClick={() => toggleAlternative(id)} aria-pressed={exploredAlternatives.includes(id)}
+                            className={`w-12 h-12 rounded-full font-extrabold transition-all duration-300 ${exploredAlternatives.includes(id) ? 'bg-blue-600 text-white scale-90' : 'bg-blue-100 text-blue-900 hover:scale-110'}`}>
+                            {id}
+                          </button>
+                        </span>
+                      ))}
+                      <span className={`px-2 font-black text-blue-700 ${isAnimating === 'add' ? 'animate-pulse' : ''}`}>ИЛИ</span>
+                      {choirIds.map((id, i) => (
+                        <span key={id} className="inline-block animate-pop-in" style={{ animationDelay: `${(theaterCount + i) * 40}ms`, opacity: 0 }}>
+                          <button data-alt={id} onClick={() => toggleAlternative(id)} aria-pressed={exploredAlternatives.includes(id)}
+                            className={`w-12 h-12 rounded-full font-extrabold transition-all duration-300 ${exploredAlternatives.includes(id) ? 'bg-cyan-600 text-white scale-90' : 'bg-cyan-100 text-cyan-900 hover:scale-110'}`}>
+                            {id}
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-3">
+                      <div className="text-sm font-bold text-slate-600 mb-2">Всяка клетка е един възможен избор:</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {allAlternatives.map(id => {
+                          const on = exploredAlternatives.includes(id);
+                          const isT = id[0] === 'Т';
+                          return (
+                            <div key={id} data-altslot={id} className={`w-11 h-11 rounded-lg grid place-items-center text-sm font-extrabold border-2 transition-all duration-300 ${on ? (isT ? 'bg-blue-600 border-blue-700 text-white animate-pop-in' : 'bg-cyan-600 border-cyan-700 text-white animate-pop-in') : (isT ? 'border-dashed border-blue-300 bg-white text-transparent' : 'border-dashed border-cyan-300 bg-white text-transparent')}`}>
+                              {id}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-3 text-center text-lg">
+                        <span className="inline-block px-3 py-1 rounded-lg bg-blue-100 text-blue-800 font-bold">{exploredAlternatives.filter(x => x[0] === 'Т').length}</span>
+                        <span className="mx-2 font-bold text-gray-500">+</span>
+                        <span className="inline-block px-3 py-1 rounded-lg bg-cyan-100 text-cyan-800 font-bold">{exploredAlternatives.filter(x => x[0] === 'Х').length}</span>
+                        <span className="mx-2 font-bold text-gray-500">=</span>
+                        <span key={exploredAlternatives.length} className="inline-block px-3 py-1 rounded-lg bg-slate-800 text-white font-bold animate-bump">{exploredAlternatives.length}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 font-bold text-blue-800" aria-live="polite">
+                      Разгледани възможности: {exploredAlternatives.length} от {addAnswer}
+                    </div>
+                    <div className="mt-3">
+                      <AutoControls title="Автоматично преброяване:" running={isAnimating === 'add'} onRun={() => animateAlternatives(true)} onStep={() => animateAlternatives(false)}
+                        onPause={() => { stopRef.current = true; }} onClear={resetAlternatives} speed={speed} setSpeed={setSpeed}
+                        disabled={isAnimating === 'multiply'} solved={exploredAlternatives.length === addAnswer} tone="blue" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 max-w-xl">
+                    {addOptions.map(answer => (
+                      <button key={answer} onClick={() => chooseChallengeAnswer('add', answer)}
+                        className={`rounded-xl px-4 py-3 font-extrabold text-lg ${challengeAnswers.add === answer ? 'bg-blue-600 text-white' : 'bg-white text-blue-900 hover:bg-blue-100'}`}>
+                        {answer}
+                      </button>
+                    ))}
+                  </div>
+                  {challengeAnswers.add !== null && (
+                    <div className={`mt-4 rounded-xl p-4 font-bold animate-pop-in ${challengeAnswers.add === addAnswer ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800 animate-shake'}`} aria-live="polite">
+                      {challengeAnswers.add === addAnswer
+                        ? <span>Браво! Изборът е от едната <strong>или</strong> от другата група: <MathFormula tex={`${theaterCount}+${choirCount}=${addAnswer}`} />.
+                            <button onClick={() => setActiveChallenge('multiply')} className="block mt-4 rounded-xl bg-blue-700 text-white px-5 py-3 font-extrabold">
+                              {multiplyDone ? 'Към второто предизвикателство →' : 'Отключи второто предизвикателство →'}
+                            </button>
+                          </span>
+                        : 'Опитай отново. Избираме само един ученик от една от двете непресичащи се групи.'}
+                    </div>
+                  )}
+                </section>
+                )}
+
+                {activeChallenge === 'multiply' && (
+                <section className="rounded-3xl border-t-4 border-emerald-500 bg-emerald-50 p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="w-10 h-10 rounded-full bg-emerald-600 text-white grid place-items-center font-black">2</span>
+                    <h4 className="text-2xl font-extrabold text-emerald-900">Предизвикателство: Пътуване на две стъпки</h4>
+                  </div>
+                  <p className="text-gray-700 text-lg mb-4">
+                    До град А може да се стигне по <strong>{routeCount}</strong> {routeCount === 1 ? 'маршрут' : 'различни маршрута'}. За всеки маршрут може да се избере
+                    {' '}{transports.map((t, i) => <React.Fragment key={t}>{i > 0 && (i === transports.length - 1 ? <> <strong>или</strong> </> : ', ')}{TRANSPORT_NAMES[t]}</React.Fragment>)}
+                    {' '}— общо {transportCount} {transportCount === 1 ? 'възможност' : 'възможности'}. Колко различни комбинации
+                    „маршрут <strong>и</strong> транспорт“ има?
+                  </p>
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    <Stepper label="Маршрути" value={routeCount} min={1} max={5} onChange={setRouteCount} disabled={!!isAnimating} tone="emerald" />
+                    <Stepper label="Видове транспорт" value={transportCount} min={1} max={4} onChange={setTransportCount} disabled={!!isAnimating} tone="teal" />
+                  </div>
+                  <div className="rounded-2xl bg-white border border-emerald-200 p-4 mb-5">
+                    <div className="font-bold text-emerald-900 mb-3">Симулация: избери маршрут и транспорт</div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-bold text-gray-500 mb-2">1. Маршрут</span>
+                        <div className="flex gap-2">
+                          {routes.map(route => (
+                            <button key={route} disabled={!!isAnimating} onClick={() => setSelectedRoute(route)} aria-pressed={selectedRoute === route}
+                              className={`flex-1 rounded-xl py-3 font-extrabold transition-all duration-300 ${selectedRoute === route ? 'bg-emerald-600 text-white scale-105' : 'bg-emerald-100 text-emerald-900'}`}>
+                              М{route}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-bold text-gray-500 mb-2">2. Транспорт</span>
+                        <div className="flex gap-2">
+                          {transports.map(transport => (
+                            <button key={transport} data-transport={transport} disabled={!!isAnimating} onClick={() => setSelectedTransport(transport)} aria-pressed={selectedTransport === transport}
+                              className={`flex-1 rounded-xl py-3 text-2xl transition-all duration-300 ${selectedTransport === transport ? 'bg-teal-600 text-white scale-105' : 'bg-teal-100'}`}>
+                              {transport}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="mx-auto border-separate" style={{ borderSpacing: 5 }}>
+                        <thead>
+                          <tr>
+                            <th></th>
+                            {transports.map(t => <th key={t} className={`text-xl rounded-lg ${selectedTransport === t ? 'bg-teal-100' : ''}`}>{t}</th>)}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {routes.map(route => (
+                            <tr key={route}>
+                              <th className={`px-2 text-sm font-extrabold rounded-lg ${selectedRoute === route ? 'bg-emerald-100 text-emerald-800' : 'text-emerald-700'}`}>М{route}</th>
+                              {transports.map(t => {
+                                const found = travelPairs.includes(`${route}-${t}`);
+                                const hot = selectedRoute === route && !found;
+                                return (
+                                  <td key={t} data-pair={`${route}-${t}`} className={`w-20 h-11 rounded-lg text-center font-bold transition-all duration-300 ${found ? 'bg-emerald-600 text-white animate-pop-in' : hot ? 'bg-emerald-100 text-emerald-400' : 'bg-white text-gray-300 border border-dashed border-gray-300'}`}>
+                                    {found ? <>М{route} {t}</> : '?'}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p className="text-center text-sm text-gray-500 mt-2">Всеки ред е маршрут, всяка колона — транспорт. Клетките са всички двойки „маршрут и транспорт“.</p>
+                    </div>
+                    <div className="mt-2 font-bold text-emerald-800" aria-live="polite">
+                      Открити двойки: <span key={travelPairs.length} className="inline-block animate-bump">{travelPairs.length}</span> от {multiplyAnswer}
+                    </div>
+                    <div className="mt-3">
+                      <AutoControls title="Автоматично подреждане:" running={isAnimating === 'multiply'} onRun={() => animateTravel(true)} onStep={() => animateTravel(false)}
+                        onPause={() => { stopRef.current = true; }} onClear={resetTravel} speed={speed} setSpeed={setSpeed}
+                        disabled={isAnimating === 'add'} solved={travelPairs.length === multiplyAnswer} tone="emerald" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 max-w-xl">
+                    {multiplyOptions.map(answer => (
+                      <button key={answer} onClick={() => chooseChallengeAnswer('multiply', answer)}
+                        className={`rounded-xl px-4 py-3 font-extrabold text-lg ${challengeAnswers.multiply === answer ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-900 hover:bg-emerald-100'}`}>
+                        {answer}
+                      </button>
+                    ))}
+                  </div>
+                  {challengeAnswers.multiply !== null && (
+                    <div className={`mt-4 rounded-xl p-4 font-bold animate-pop-in ${challengeAnswers.multiply === multiplyAnswer ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800 animate-shake'}`} aria-live="polite">
+                      {challengeAnswers.multiply === multiplyAnswer
+                        ? <span>Точно така! {routeCount === 1 ? 'За единствения маршрут има' : `За всеки от ${routeCount}-те маршрута има по`} {transportCount} {transportCount === 1 ? 'транспорт' : 'транспорта'}: <MathFormula tex={`${routeCount} \\cdot ${transportCount}=${multiplyAnswer}`} />.
+                            <button onClick={() => setActiveChallenge('summary')} className="block mt-4 rounded-xl bg-emerald-700 text-white px-5 py-3 font-extrabold">
+                              Разкрий заглавието и обобщението →
+                            </button>
+                          </span>
+                        : 'Опитай отново. За всеки маршрут трябва да отчетеш всички възможни видове транспорт.'}
+                    </div>
+                  )}
+                </section>
+                )}
+
+                {activeChallenge === 'summary' && solvedChallenges === 2 && (
+                  <div className="rounded-3xl bg-gradient-to-r from-amber-400 to-orange-500 text-white p-6 text-center animate-pop-in">
+                    <Trophy size={42} className="mx-auto mb-2" />
+                    <strong className="block text-2xl">Урок 1 е завършен!</strong>
+                    <span className="block mb-4">Вече можеш да преминеш към пермутации, вариации и комбинации.</span>
+                    <button onClick={onNext} className="rounded-xl bg-white text-orange-700 px-6 py-3 font-extrabold">
+                      Към урок 2
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {activeChallenge === 'summary' && (
+              <>
+              <div className="mt-7 rounded-3xl border-2 border-dashed border-amber-300 bg-amber-50 p-5">
+                <h4 className="font-extrabold text-xl text-amber-900 mb-3">Бърз ориентир</h4>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <button onClick={() => setCheckedRule('add')} className="rounded-2xl bg-white border border-blue-200 p-4 text-left hover:bg-blue-50">
+                    <strong className="text-blue-800">Избирам A ИЛИ B</strong>
+                    <span className="block text-sm text-gray-600 mt-1">Натисни, за да провериш правилото.</span>
+                  </button>
+                  <button onClick={() => setCheckedRule('multiply')} className="rounded-2xl bg-white border border-emerald-200 p-4 text-left hover:bg-emerald-50">
+                    <strong className="text-emerald-800">Извършвам A И след това B</strong>
+                    <span className="block text-sm text-gray-600 mt-1">Натисни, за да провериш правилото.</span>
+                  </button>
+                </div>
+                {checkedRule && (
+                  <div className={`mt-4 rounded-2xl p-4 font-bold animate-pop-in ${checkedRule === 'add' ? 'bg-blue-100 text-blue-900' : 'bg-emerald-100 text-emerald-900'}`} aria-live="polite">
+                    {checkedRule === 'add'
+                      ? 'Правилно: при избор „A или B“ събираме броя на възможностите.'
+                      : 'Правилно: при последователни стъпки „A и B“ умножаваме броя на възможностите.'}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-7 rounded-2xl bg-slate-900 text-white p-5 text-center">
+                <strong className="text-amber-300">Запомни:</strong>
+                <span className="ml-2">„ИЛИ“ насочва към събиране, а „И“ между последователни стъпки — към умножение.</span>
+              </div>
+              </>
+              )}
             </div>
           );
         };
@@ -285,11 +955,77 @@
           const [currentSelection, setCurrentSelection] = useState([]);
           const [foundSets, setFoundSets] = useState([]);
           const [message, setMessage] = useState('');
+          const selectionAnimation = useSelectionAnimation(allItems, 3, setAvailableItems, setCurrentSelection);
           
           const targetCount = 6; 
           const isSolved = foundSets.length === targetCount;
 
+          // --- Автоматично подреждане на всички възможности ---
+          const rootRef = useRef(null);
+          const foundRef = useRef(foundSets);
+          const stopRef = useRef(false);
+          const aliveRef = useRef(true);
+          const [autoRunning, setAutoRunning] = useState(false);
+          const [pending, setPending] = useState(false);
+          const [speed, setSpeed] = useState('normal');
+          const speedRef = useRef('normal');
+          const autoTone = 'blue';
+          useEffect(() => { foundRef.current = foundSets; }, [foundSets]);
+          useEffect(() => { speedRef.current = speed; }, [speed]);
+          useEffect(() => () => { aliveRef.current = false; stopRef.current = true; }, []);
+          const keyOf = (a) => (true ? a : [...a].sort()).join('-');
+          const slotFor = (st) => st;
+
+          const autoArrange = async (continuous) => {
+            stopRef.current = false;
+            setAutoRunning(true);
+            resetSelection();
+            setMessage('');
+            while (aliveRef.current) {
+              const found = foundRef.current;
+              const next = arrangementsOf(allItems, 3, true).find(a => !found.includes(keyOf(a)));
+              if (!next) break;
+              const ms = SPEEDS.find(x => x.id === speedRef.current).ms;
+              for (let st = 0; st < next.length; st++) {
+                const item = next[st];
+                const root = rootRef.current;
+                const from = root && root.querySelector(`[data-item="${item}"]`);
+                const to = root && root.querySelector(`[data-slot="${slotFor(st)}"]`);
+                await flyEmoji(from, to, item, ms);
+                if (!aliveRef.current) return;
+                const part = next.slice(0, st + 1);
+                setCurrentSelection(part);
+                setAvailableItems(allItems.filter(i => !part.includes(i)));
+                await sleep(ms * 0.25);
+              }
+              await sleep(ms * 0.5);
+              if (!aliveRef.current) return;
+              const updated = [...foundRef.current, keyOf(next)];
+              foundRef.current = updated;
+              setFoundSets(updated);
+              setMessage('Браво! Откри нова подредба.');
+              if (updated.length === targetCount && onComplete) onComplete();
+              await sleep(ms * 0.9);
+              if (!aliveRef.current) return;
+              setMessage('');
+              resetSelection();
+              await sleep(ms * 0.2);
+              if (!continuous || stopRef.current) break;
+            }
+            if (aliveRef.current) setAutoRunning(false);
+          };
+
+          const clearAll = () => {
+            stopRef.current = true;
+            foundRef.current = [];
+            setFoundSets([]);
+            setMessage('');
+            resetSelection();
+          };
+
+
           const selectItem = (item) => {
+            if (autoRunning || pending) return;
             if (currentSelection.length < 3) {
               setCurrentSelection([...currentSelection, item]);
               setAvailableItems(availableItems.filter(i => i !== item));
@@ -297,17 +1033,18 @@
           };
 
           const undoItem = (item) => {
+            if (autoRunning || pending) return;
             setCurrentSelection(currentSelection.filter(i => i !== item));
             setAvailableItems([...availableItems, item].sort((a, b) => allItems.indexOf(a) - allItems.indexOf(b)));
           };
 
           const resetSelection = () => {
-            setCurrentSelection([]);
-            setAvailableItems(allItems);
+            selectionAnimation.resetAnimatedSelection();
           };
 
           const submitSelection = () => {
             if (currentSelection.length !== 3) return;
+            setPending(true);
             
             const setStr = currentSelection.join('-');
             let newFoundSets = [...foundSets];
@@ -325,13 +1062,14 @@
             }
             
             setTimeout(() => {
+              setPending(false);
               setMessage('');
               resetSelection();
             }, 1500);
           };
 
           return (
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-blue-500 animate-slide-up">
+            <div ref={rootRef} className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-blue-500 animate-slide-up">
               <h3 className="text-2xl font-extrabold text-blue-700 mb-4 transition-all">
                 {isSolved ? 'Разкрито: Пермутации' : 'Първо предизвикателство: Подреди плодовете'}
               </h3>
@@ -340,13 +1078,15 @@
                 {!isSolved ? ' Намери всички възможни различни начини на подреждане, за да отключиш тайната на това математическо действие!' : ` Броят на всички възможни подредби е точно ${targetCount}.`}
               </p>
 
+              <AutoControls running={autoRunning} onRun={() => autoArrange(true)} onStep={() => autoArrange(false)} onPause={() => { stopRef.current = true; }} onClear={clearAll} speed={speed} setSpeed={setSpeed} disabled={pending} solved={isSolved} tone={autoTone} />
+
               <div className="flex flex-col lg:flex-row gap-6 mb-8">
                 <div className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">
                   <div className="mb-6">
                     <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Свободни плодове:</div>
                     <div className="flex gap-3 min-h-[70px]">
                       {availableItems.map((item, idx) => (
-                        <button key={idx} onClick={() => selectItem(item)} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
+                        <button key={item} data-item={item} onClick={() => selectItem(item)} aria-label={`Добави плод ${item} в редицата`} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
                           {item}
                         </button>
                       ))}
@@ -357,9 +1097,9 @@
                     <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Твоята редица:</div>
                     <div className="flex gap-3 bg-gray-200 p-3 rounded-2xl min-h-[90px] items-center">
                       {[0, 1, 2].map((slotIdx) => (
-                        <div key={slotIdx} className="w-16 h-16 border-2 border-dashed border-gray-400 bg-white/50 rounded-xl flex items-center justify-center">
+                        <div data-slot={slotIdx} key={slotIdx} className="w-16 h-16 border-2 border-dashed border-gray-400 bg-white/50 rounded-xl flex items-center justify-center">
                           {currentSelection[slotIdx] ? (
-                            <button onClick={() => undoItem(currentSelection[slotIdx])} className="text-5xl hover:scale-110 transition-transform">
+                            <button onClick={() => undoItem(currentSelection[slotIdx])} aria-label={`Премахни плод ${currentSelection[slotIdx]} от редицата`} className="text-5xl hover:scale-110 transition-transform">
                               {currentSelection[slotIdx]}
                             </button>
                           ) : null}
@@ -370,7 +1110,7 @@
 
                   <button 
                     onClick={submitSelection}
-                    disabled={currentSelection.length !== 3}
+                    disabled={currentSelection.length !== 3 || autoRunning || pending}
                     className={`w-full py-4 rounded-xl font-bold text-white transition-all text-lg shadow-md ${currentSelection.length === 3 ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
                   >
                     Запиши редицата
@@ -433,11 +1173,77 @@
           const [currentSelection, setCurrentSelection] = useState([]);
           const [foundSets, setFoundSets] = useState([]);
           const [message, setMessage] = useState('');
+          const selectionAnimation = useSelectionAnimation(allItems, 2, setAvailableItems, setCurrentSelection);
 
           const targetCount = 12;
           const isSolved = foundSets.length === targetCount;
 
+          // --- Автоматично подреждане на всички възможности ---
+          const rootRef = useRef(null);
+          const foundRef = useRef(foundSets);
+          const stopRef = useRef(false);
+          const aliveRef = useRef(true);
+          const [autoRunning, setAutoRunning] = useState(false);
+          const [pending, setPending] = useState(false);
+          const [speed, setSpeed] = useState('normal');
+          const speedRef = useRef('normal');
+          const autoTone = 'emerald';
+          useEffect(() => { foundRef.current = foundSets; }, [foundSets]);
+          useEffect(() => { speedRef.current = speed; }, [speed]);
+          useEffect(() => () => { aliveRef.current = false; stopRef.current = true; }, []);
+          const keyOf = (a) => (true ? a : [...a].sort()).join('-');
+          const slotFor = (st) => st;
+
+          const autoArrange = async (continuous) => {
+            stopRef.current = false;
+            setAutoRunning(true);
+            resetSelection();
+            setMessage('');
+            while (aliveRef.current) {
+              const found = foundRef.current;
+              const next = arrangementsOf(allItems, 2, true).find(a => !found.includes(keyOf(a)));
+              if (!next) break;
+              const ms = SPEEDS.find(x => x.id === speedRef.current).ms;
+              for (let st = 0; st < next.length; st++) {
+                const item = next[st];
+                const root = rootRef.current;
+                const from = root && root.querySelector(`[data-item="${item}"]`);
+                const to = root && root.querySelector(`[data-slot="${slotFor(st)}"]`);
+                await flyEmoji(from, to, item, ms);
+                if (!aliveRef.current) return;
+                const part = next.slice(0, st + 1);
+                setCurrentSelection(part);
+                setAvailableItems(allItems.filter(i => !part.includes(i)));
+                await sleep(ms * 0.25);
+              }
+              await sleep(ms * 0.5);
+              if (!aliveRef.current) return;
+              const updated = [...foundRef.current, keyOf(next)];
+              foundRef.current = updated;
+              setFoundSets(updated);
+              setMessage('Супер! Намери нова възможност.');
+              if (updated.length === targetCount && onComplete) onComplete();
+              await sleep(ms * 0.9);
+              if (!aliveRef.current) return;
+              setMessage('');
+              resetSelection();
+              await sleep(ms * 0.2);
+              if (!continuous || stopRef.current) break;
+            }
+            if (aliveRef.current) setAutoRunning(false);
+          };
+
+          const clearAll = () => {
+            stopRef.current = true;
+            foundRef.current = [];
+            setFoundSets([]);
+            setMessage('');
+            resetSelection();
+          };
+
+
           const selectItem = (item) => {
+            if (autoRunning || pending) return;
             if (currentSelection.length < 2) {
               setCurrentSelection([...currentSelection, item]);
               setAvailableItems(availableItems.filter(i => i !== item));
@@ -445,17 +1251,18 @@
           };
 
           const undoItem = (item) => {
+            if (autoRunning || pending) return;
             setCurrentSelection(currentSelection.filter(i => i !== item));
             setAvailableItems([...availableItems, item].sort((a, b) => allItems.indexOf(a) - allItems.indexOf(b)));
           };
 
           const resetSelection = () => {
-            setCurrentSelection([]);
-            setAvailableItems(allItems);
+            selectionAnimation.resetAnimatedSelection();
           };
 
           const submitSelection = () => {
             if (currentSelection.length !== 2) return;
+            setPending(true);
             
             const setStr = currentSelection.join('-');
             let newFoundSets = [...foundSets];
@@ -473,13 +1280,14 @@
             }
 
             setTimeout(() => {
+              setPending(false);
               setMessage('');
               resetSelection();
             }, 1500);
           };
 
           return (
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-emerald-500 animate-slide-up">
+            <div ref={rootRef} className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-emerald-500 animate-slide-up">
               <h3 className="text-2xl font-extrabold text-emerald-700 mb-4 transition-all">
                 {isSolved ? 'Разкрито: Вариации' : 'Второ предизвикателство: Паркингът'}
               </h3>
@@ -488,13 +1296,15 @@
                 {!isSolved ? ' Избери 2 коли и ги паркирай. Намери всички възможни начини! Внимание: Редът на паркиране (коя е първа и коя втора) има значение!' : ` Откри всички ${targetCount} начина на паркиране.`}
               </p>
 
+              <AutoControls running={autoRunning} onRun={() => autoArrange(true)} onStep={() => autoArrange(false)} onPause={() => { stopRef.current = true; }} onClear={clearAll} speed={speed} setSpeed={setSpeed} disabled={pending} solved={isSolved} tone={autoTone} />
+
               <div className="flex flex-col lg:flex-row gap-6 mb-8">
                 <div className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">
                   <div className="mb-6">
                     <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Автопарк:</div>
                     <div className="flex gap-3 min-h-[70px]">
                       {availableItems.map((item, idx) => (
-                        <button key={idx} onClick={() => selectItem(item)} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
+                        <button key={item} data-item={item} onClick={() => selectItem(item)} aria-label={`Паркирай автомобил ${item}`} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
                           {item}
                         </button>
                       ))}
@@ -505,10 +1315,10 @@
                     <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Паркоместа:</div>
                     <div className="flex gap-4 bg-gray-200 p-4 rounded-2xl min-h-[100px] items-center justify-center">
                       {[0, 1].map((slotIdx) => (
-                        <div key={slotIdx} className="w-20 h-20 border-4 border-dashed border-gray-400 bg-white/60 rounded-xl flex flex-col items-center justify-center relative">
+                        <div data-slot={slotIdx} key={slotIdx} className="w-20 h-20 border-4 border-dashed border-gray-400 bg-white/60 rounded-xl flex flex-col items-center justify-center relative">
                           <span className="absolute -bottom-6 text-xs text-gray-500 font-bold bg-gray-200 px-2 py-1 rounded-full">Място {slotIdx + 1}</span>
                           {currentSelection[slotIdx] ? (
-                            <button onClick={() => undoItem(currentSelection[slotIdx])} className="text-5xl hover:scale-110 transition-transform">
+                            <button onClick={() => undoItem(currentSelection[slotIdx])} aria-label={`Премахни автомобил ${currentSelection[slotIdx]} от място ${slotIdx + 1}`} className="text-5xl hover:scale-110 transition-transform">
                               {currentSelection[slotIdx]}
                             </button>
                           ) : null}
@@ -519,7 +1329,7 @@
 
                   <button 
                     onClick={submitSelection}
-                    disabled={currentSelection.length !== 2}
+                    disabled={currentSelection.length !== 2 || autoRunning || pending}
                     className={`w-full py-4 mt-2 rounded-xl font-bold text-white transition-all text-lg shadow-md ${currentSelection.length === 2 ? 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
                   >
                     Запази паркирането
@@ -582,11 +1392,77 @@
           const [foundSets, setFoundSets] = useState([]);
           const [message, setMessage] = useState('');
           const [isError, setIsError] = useState(false);
+          const selectionAnimation = useSelectionAnimation(allItems, 2, setAvailableItems, setCurrentSelection);
 
           const targetCount = 6; 
           const isSolved = foundSets.length === targetCount;
 
+          // --- Автоматично подреждане на всички възможности ---
+          const rootRef = useRef(null);
+          const foundRef = useRef(foundSets);
+          const stopRef = useRef(false);
+          const aliveRef = useRef(true);
+          const [autoRunning, setAutoRunning] = useState(false);
+          const [pending, setPending] = useState(false);
+          const [speed, setSpeed] = useState('normal');
+          const speedRef = useRef('normal');
+          const autoTone = 'purple';
+          useEffect(() => { foundRef.current = foundSets; }, [foundSets]);
+          useEffect(() => { speedRef.current = speed; }, [speed]);
+          useEffect(() => () => { aliveRef.current = false; stopRef.current = true; }, []);
+          const keyOf = (a) => (false ? a : [...a].sort()).join('-');
+          const slotFor = () => 0;
+
+          const autoArrange = async (continuous) => {
+            stopRef.current = false;
+            setAutoRunning(true);
+            resetSelection();
+            setMessage('');
+            while (aliveRef.current) {
+              const found = foundRef.current;
+              const next = arrangementsOf(allItems, 2, false).find(a => !found.includes(keyOf(a)));
+              if (!next) break;
+              const ms = SPEEDS.find(x => x.id === speedRef.current).ms;
+              for (let st = 0; st < next.length; st++) {
+                const item = next[st];
+                const root = rootRef.current;
+                const from = root && root.querySelector(`[data-item="${item}"]`);
+                const to = root && root.querySelector(`[data-slot="${slotFor(st)}"]`);
+                await flyEmoji(from, to, item, ms);
+                if (!aliveRef.current) return;
+                const part = next.slice(0, st + 1);
+                setCurrentSelection(part);
+                setAvailableItems(allItems.filter(i => !part.includes(i)));
+                await sleep(ms * 0.25);
+              }
+              await sleep(ms * 0.5);
+              if (!aliveRef.current) return;
+              const updated = [...foundRef.current, keyOf(next)];
+              foundRef.current = updated;
+              setFoundSets(updated);
+              setMessage('Чудесно! Откри нова група.');
+              if (updated.length === targetCount && onComplete) onComplete();
+              await sleep(ms * 0.9);
+              if (!aliveRef.current) return;
+              setMessage('');
+              resetSelection();
+              await sleep(ms * 0.2);
+              if (!continuous || stopRef.current) break;
+            }
+            if (aliveRef.current) setAutoRunning(false);
+          };
+
+          const clearAll = () => {
+            stopRef.current = true;
+            foundRef.current = [];
+            setFoundSets([]);
+            setMessage('');
+            resetSelection();
+          };
+
+
           const selectItem = (item) => {
+            if (autoRunning || pending) return;
             if (currentSelection.length < 2) {
               setCurrentSelection([...currentSelection, item]);
               setAvailableItems(availableItems.filter(i => i !== item));
@@ -594,17 +1470,18 @@
           };
 
           const undoItem = (item) => {
+            if (autoRunning || pending) return;
             setCurrentSelection(currentSelection.filter(i => i !== item));
             setAvailableItems([...availableItems, item].sort((a, b) => allItems.indexOf(a) - allItems.indexOf(b)));
           };
 
           const resetSelection = () => {
-            setCurrentSelection([]);
-            setAvailableItems(allItems);
+            selectionAnimation.resetAnimatedSelection();
           };
 
           const submitSelection = () => {
             if (currentSelection.length !== 2) return;
+            setPending(true);
             
             const sortedSelection = [...currentSelection].sort();
             const setStr = sortedSelection.join('-');
@@ -625,6 +1502,7 @@
             }
 
             setTimeout(() => {
+              setPending(false);
               setMessage('');
               setIsError(false);
               resetSelection();
@@ -632,7 +1510,7 @@
           };
 
           return (
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-purple-500 animate-slide-up">
+            <div ref={rootRef} className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-t-4 border-purple-500 animate-slide-up">
               <h3 className="text-2xl font-extrabold text-purple-700 mb-4 transition-all">
                 {isSolved ? 'Разкрито: Комбинации' : 'Трето предизвикателство: Спортната торба'}
               </h3>
@@ -641,13 +1519,15 @@
                 {!isSolved ? ' Намери всички възможни "групички". Помисли: има ли значение коя топка слагаш първа и коя втора вътре в торбата?' : ` Намери всички ${targetCount} уникални групи (комбинации).`}
               </p>
 
+              <AutoControls running={autoRunning} onRun={() => autoArrange(true)} onStep={() => autoArrange(false)} onPause={() => { stopRef.current = true; }} onClear={clearAll} speed={speed} setSpeed={setSpeed} disabled={pending} solved={isSolved} tone={autoTone} />
+
               <div className="flex flex-col lg:flex-row gap-6 mb-8">
                 <div className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">
                   <div className="mb-6">
                     <div className="text-sm font-bold mb-3 text-gray-500 uppercase tracking-wider">Свободни топки:</div>
                     <div className="flex gap-3 min-h-[70px]">
                       {availableItems.map((item, idx) => (
-                        <button key={idx} onClick={() => selectItem(item)} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
+                        <button key={item} data-item={item} onClick={() => selectItem(item)} aria-label={`Добави топка ${item} в групата`} className="text-5xl bg-white p-3 rounded-xl shadow hover:scale-110 hover:-translate-y-1 transition-all">
                           {item}
                         </button>
                       ))}
@@ -658,10 +1538,10 @@
                     <div className="text-sm font-bold mb-3 text-purple-600 uppercase tracking-wider flex items-center gap-2">
                       Торба (Група от 2): <span className="text-xs normal-case text-gray-500">(Редът няма значение)</span>
                     </div>
-                    <div className="flex gap-2 bg-purple-100 p-4 rounded-full min-h-[100px] items-center justify-center border-4 border-purple-300 shadow-inner">
+                    <div data-slot="0" className="flex gap-2 bg-purple-100 p-4 rounded-full min-h-[100px] items-center justify-center border-4 border-purple-300 shadow-inner">
                       {currentSelection.length === 0 && <span className="text-purple-400 text-sm italic">Торбата е празна...</span>}
                       {currentSelection.map((item, idx) => (
-                        <button key={idx} onClick={() => undoItem(item)} className="text-5xl hover:scale-110 transition-transform bg-white rounded-full p-2 shadow-md">
+                        <button key={idx} onClick={() => undoItem(item)} aria-label={`Премахни топка ${item} от групата`} className="text-5xl hover:scale-110 transition-transform bg-white rounded-full p-2 shadow-md">
                           {item}
                         </button>
                       ))}
@@ -670,7 +1550,7 @@
 
                   <button 
                     onClick={submitSelection}
-                    disabled={currentSelection.length !== 2}
+                    disabled={currentSelection.length !== 2 || autoRunning || pending}
                     className={`w-full py-4 mt-2 rounded-xl font-bold text-white transition-all text-lg shadow-md ${currentSelection.length === 2 ? 'bg-purple-600 hover:bg-purple-700 hover:shadow-lg active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
                   >
                     Хвърли в торбата
@@ -691,7 +1571,7 @@
                   <div className="grid grid-cols-2 gap-4">
                     {foundSets.map((set, idx) => (
                       <div key={idx} className="bg-white p-3 rounded-full shadow-sm text-center text-3xl flex justify-center gap-2 border border-purple-100 animate-pop-in">
-                         {set.split('-').map((item, i) => <span key={i}>{item}</span>)}
+                         {set.split('-').sort((x, y) => allItems.indexOf(x) - allItems.indexOf(y)).map((item, i) => <span key={i}>{item}</span>)}
                       </div>
                     ))}
                     {Array.from({ length: targetCount - foundSets.length }).map((_, idx) => (
@@ -816,9 +1696,76 @@
                 [options[j], options[randIdx]] = [options[randIdx], options[j]];
             }
 
-            questions.push({ id: i, text: qText, options: options, correctAnswer: answer });
+            questions.push({ id: i, text: qText, options: options, correctAnswer: answer, type, n, k: type === 1 ? n : k });
           }
           return questions;
+        };
+
+        const QuizSimulation = ({ question }) => {
+          const [selected, setSelected] = useState([]);
+          const [isAnimating, setIsAnimating] = useState(false);
+          const { schedule, clearAnimation } = useTimedAnimation();
+          const needed = question.type === 1 ? question.n : question.k;
+          const orderMatters = question.type !== 3;
+
+          useEffect(() => {
+            clearAnimation();
+            setSelected([]);
+            setIsAnimating(false);
+          }, [question.id]);
+
+          const resetSimulation = () => {
+            clearAnimation();
+            setSelected([]);
+            setIsAnimating(false);
+          };
+          const animateSimulation = () => {
+            resetSimulation();
+            setIsAnimating(true);
+            Array.from({length:needed},(_,index)=>index+1).forEach((item, index) => {
+              schedule(() => setSelected(previous => [...previous, item]), index * 650);
+            });
+            schedule(() => setIsAnimating(false), needed * 650 + 150);
+          };
+
+          const toggle = (item) => {
+            if (selected.includes(item)) {
+              setSelected(selected.filter(value => value !== item));
+            } else if (selected.length < needed) {
+              setSelected([...selected, item]);
+            }
+          };
+
+          const displayedSelection = orderMatters ? selected : [...selected].sort((a,b)=>a-b);
+
+          return (
+            <div className="mb-7 rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <strong className="text-indigo-900">Симулация към въпроса</strong>
+                <span className="text-sm font-bold text-indigo-700">
+                  {orderMatters ? 'Редът се запазва' : 'Редът не променя групата'}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {Array.from({length:question.n},(_,index)=>index+1).map(item => (
+                  <button key={item} onClick={() => toggle(item)} aria-pressed={selected.includes(item)}
+                    className={`w-11 h-11 rounded-xl font-extrabold ${selected.includes(item) ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-900 border border-indigo-200'}`}>
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2 min-h-[48px]">
+                <span className="text-sm font-bold text-gray-500 mr-2">{question.type === 1 ? 'Подредба:' : question.type === 2 ? 'Избрани позиции:' : 'Група:'}</span>
+                {Array.from({length:needed},(_,index) => (
+                  <span key={index} className="w-11 h-11 rounded-xl bg-white border-2 border-dashed border-indigo-300 grid place-items-center font-bold text-indigo-900">
+                    {displayedSelection[index] || '—'}
+                  </span>
+                ))}
+              </div>
+              <SimulationControls onPlay={animateSimulation} onReset={resetSimulation}
+                isAnimating={isAnimating} label="Попълни модела стъпка по стъпка" />
+            </div>
+          );
         };
 
         const Quiz = () => {
@@ -875,6 +1822,7 @@
                   <div className="mb-8 text-xl font-medium text-gray-800 bg-gray-50 p-6 rounded-2xl flex flex-wrap gap-1 items-center leading-relaxed">
                     {questions[currentQIndex].text}
                   </div>
+                  <QuizSimulation question={questions[currentQIndex]} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-auto">
                     {questions[currentQIndex].options.map((opt, idx) => {
                       let btnClass = "bg-white border-2 border-indigo-100 hover:border-indigo-500 hover:bg-indigo-50 text-indigo-900";
@@ -926,35 +1874,59 @@
         };
 
         function App() {
-          const [started, setStarted] = useState(false);
+          const [lessonPath, setLessonPath] = useState(null);
           const [activeTab, setActiveTab] = useState('permutations');
+          const [rulesSolved, setRulesSolved] = useState(false);
           const [solvedLevels, setSolvedLevels] = useState({
             permutations: false,
             variations: false,
             combinations: false
           });
+          const modelsSolved = solvedLevels.permutations && solvedLevels.variations && solvedLevels.combinations;
 
-          if (!started) {
+          if (!lessonPath) {
             return (
               <div className="min-h-screen bg-slate-50 font-sans">
-                <HomePage onStart={() => setStarted(true)} />
+                <HomePage onStart={(path) => {
+                  setLessonPath(path);
+                  setActiveTab(path === 'rules' ? 'rules' : 'permutations');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }} />
               </div>
             );
           }
 
           return (
             <div className="min-h-screen bg-slate-50 font-sans text-gray-800 selection:bg-blue-200 flex flex-col relative overflow-x-hidden">
-              <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-3 flex items-center gap-4 sticky top-0 z-50">
-                <button onClick={() => setStarted(false)} className="text-gray-500 hover:text-blue-600 transition-colors flex items-center justify-center bg-gray-100 hover:bg-blue-50 p-2 rounded-xl" title="Към началото">
+              <header className="bg-white shadow-sm border-b border-gray-200 pl-32 pr-4 md:pr-6 py-3 flex items-center gap-4 sticky top-0 z-50">
+                <button onClick={() => setLessonPath(null)} className="text-gray-500 hover:text-blue-600 transition-colors flex items-center justify-center bg-gray-100 hover:bg-blue-50 p-2 rounded-xl" title="Към избора на урок">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 </button>
                 <div>
-                  <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight leading-tight">Комбинаторика</h1>
-                  <h2 className="text-sm text-gray-500 font-medium hidden sm:block">Интерактивен урок за 8. клас</h2>
+                  <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                    {lessonPath === 'rules'
+                      ? (rulesSolved ? 'Събиране и умножение на възможности' : 'Урок 1 · Открий правилата')
+                      : (modelsSolved ? 'Пермутации, вариации и комбинации' : 'Урок 2 · Открий моделите')}
+                  </h1>
+                  <h2 className="text-sm text-gray-500 font-medium hidden sm:block">
+                    {lessonPath === 'rules' ? 'Урок 1 · Основни правила за броене' : 'Урок 2 · Основни комбинаторни модели'}
+                  </h2>
                 </div>
               </header>
 
               <div className="max-w-6xl w-full mx-auto px-4 mt-6 flex-1 flex flex-col relative z-10">
+                {lessonPath === 'rules' ? (
+                  <div className="flex items-center justify-between gap-4 bg-amber-50 rounded-2xl shadow-sm p-4 mb-6 border border-amber-200">
+                    <div>
+                      <strong className="text-amber-900">Урок 1</strong>
+                      <span className="block text-sm text-amber-800">Две предизвикателства и обобщение</span>
+                    </div>
+                    <button onClick={() => { setLessonPath('models'); setActiveTab('permutations'); window.scrollTo({top:0,behavior:'smooth'}); }}
+                      className="rounded-xl bg-blue-600 text-white px-5 py-3 font-bold whitespace-nowrap">
+                      Към урок 2 →
+                    </button>
+                  </div>
+                ) : (
                 <div className="flex bg-white rounded-2xl shadow-sm p-1.5 gap-2 mb-6 overflow-x-auto border border-gray-200 shrink-0 hide-scrollbar">
                   <button 
                     onClick={() => setActiveTab('permutations')}
@@ -965,39 +1937,45 @@
                   </button>
                   
                   <button 
-                    onClick={() => setActiveTab('variations')}
-                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'variations' ? 'bg-emerald-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                    disabled={!solvedLevels.permutations}
+                    onClick={() => solvedLevels.permutations && setActiveTab('variations')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'variations' ? 'bg-emerald-600 text-white shadow-md' : solvedLevels.permutations ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}`}
                   >
                     {solvedLevels.variations ? <CheckCircle size={18} /> : <span className="bg-emerald-100 text-emerald-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>}
-                    {solvedLevels.variations ? 'Вариации' : 'Предизвикателство'}
+                    {solvedLevels.variations ? 'Вариации' : solvedLevels.permutations ? 'Предизвикателство' : 'Заключено'}
                   </button>
                   
                   <button 
-                    onClick={() => setActiveTab('combinations')}
-                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'combinations' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                    disabled={!solvedLevels.variations}
+                    onClick={() => solvedLevels.variations && setActiveTab('combinations')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'combinations' ? 'bg-purple-600 text-white shadow-md' : solvedLevels.variations ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}`}
                   >
                      {solvedLevels.combinations ? <CheckCircle size={18} /> : <span className="bg-purple-100 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>}
-                    {solvedLevels.combinations ? 'Комбинации' : 'Предизвикателство'}
+                    {solvedLevels.combinations ? 'Комбинации' : solvedLevels.variations ? 'Предизвикателство' : 'Заключено'}
                   </button>
 
                   <button 
-                    onClick={() => setActiveTab('summary')}
-                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'summary' ? 'bg-amber-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                    disabled={!modelsSolved}
+                    onClick={() => modelsSolved && setActiveTab('summary')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'summary' ? 'bg-amber-500 text-white shadow-md' : modelsSolved ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}`}
                   >
                      <span className="bg-amber-100 text-amber-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
-                     Обобщение
+                     {modelsSolved ? 'Обобщение' : 'Заключено'}
                   </button>
 
                   <button 
-                    onClick={() => setActiveTab('quiz')}
-                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'quiz' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                    disabled={!modelsSolved}
+                    onClick={() => modelsSolved && setActiveTab('quiz')}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm sm:text-base transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'quiz' ? 'bg-indigo-600 text-white shadow-md' : modelsSolved ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}`}
                   >
                      <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span>
-                     Тест
+                     {modelsSolved ? 'Тест' : 'Заключено'}
                   </button>
                 </div>
+                )}
 
                 <main className="mb-12 flex-1 relative">
+                  {activeTab === 'rules' && <CountingRules onComplete={() => setRulesSolved(true)} onNext={() => { setLessonPath('models'); setActiveTab('permutations'); window.scrollTo({top:0,behavior:'smooth'}); }} />}
                   {activeTab === 'permutations' && <PermutationsLab onComplete={() => setSolvedLevels(prev => ({...prev, permutations: true}))} />}
                   {activeTab === 'variations' && <VariationsLab onComplete={() => setSolvedLevels(prev => ({...prev, variations: true}))} />}
                   {activeTab === 'combinations' && <CombinationsLab onComplete={() => setSolvedLevels(prev => ({...prev, combinations: true}))} />}
@@ -1009,6 +1987,17 @@
                       <p className="text-gray-700 text-lg mb-8">
                         Преди да преминеш към теста, нека преговорим! Най-важното в комбинаториката е да си зададеш правилните въпроси, за да разбереш коя формула ти трябва.
                       </p>
+
+                      <div className="grid sm:grid-cols-2 gap-4 mb-8">
+                        <div className="rounded-2xl bg-blue-50 border border-blue-200 p-5">
+                          <h4 className="font-extrabold text-blue-900 text-xl mb-2">A ИЛИ B → събиране</h4>
+                          <p className="text-gray-700">При непресичащи се алтернативни избори общият брой е <MathFormula tex="m+n" />.</p>
+                        </div>
+                        <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
+                          <h4 className="font-extrabold text-emerald-900 text-xl mb-2">A И B → умножение</h4>
+                          <p className="text-gray-700">При последователни стъпки общият брой е <MathFormula tex="m \cdot n" />.</p>
+                        </div>
+                      </div>
 
                       <div className="grid md:grid-cols-3 gap-6 mb-8">
                         
@@ -1105,7 +2094,7 @@
                 </main>
               </div>
               
-              <SmallLogo onHome={() => { setStarted(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+              <SmallLogo onHome={() => { setLessonPath(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
             </div>
           );
         }

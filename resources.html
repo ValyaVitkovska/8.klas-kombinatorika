@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#172554">
+  <title>Ресурси – Комбинаторика</title>
+  <style>
+    :root{--navy:#172554;--ink:#172033;--muted:#64748b}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:radial-gradient(circle at 85% 5%,#cffafe 0,transparent 28rem),#f8fafc}
+    .shell{width:min(1240px,calc(100% - 32px));margin:auto}
+    header{position:sticky;top:0;z-index:20;background:rgba(248,250,252,.92);backdrop-filter:blur(16px);border-bottom:1px solid #dbeafe}
+    .topbar{min-height:92px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+    .brand{display:flex;align-items:center;text-decoration:none}.brand img{width:50px;height:50px;object-fit:contain;opacity:.82}
+    nav{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+    nav a{min-height:52px;padding:14px 22px;border-radius:16px;text-decoration:none;font-weight:900;font-size:1.02rem;color:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 5px 0 rgba(15,23,42,.2),0 10px 18px rgba(15,23,42,.11);transition:.14s ease}
+    nav a:first-child{background:linear-gradient(135deg,#2563eb,#0891b2)}
+    nav a:last-child{background:linear-gradient(135deg,#f59e0b,#ea580c)}
+    nav a:hover,nav a:focus-visible{translate:0 -2px;filter:brightness(1.08);outline:3px solid #bfdbfe;outline-offset:3px}
+    main{padding:58px 0 84px}
+    h1{margin:0 0 34px;color:var(--navy);font-size:clamp(2.7rem,6vw,5rem);letter-spacing:-.055em}
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+    .card{position:relative;display:flex;flex-direction:column;min-height:430px;background:rgba(255,255,255,.94);border:1px solid #dbeafe;border-radius:26px;padding:28px;text-decoration:none;box-shadow:0 16px 42px rgba(30,64,175,.1);transition:.22s ease}
+    .card:hover,.card:focus-visible{transform:translateY(-7px);box-shadow:0 24px 56px rgba(30,64,175,.17);outline:3px solid #93c5fd}
+    .card-icon{width:70px;height:70px;border-radius:21px;display:grid;place-items:center;font-size:2.2rem;margin-bottom:40px}
+    .lesson .card-icon{background:#dbeafe}.trainer .card-icon{background:#d1fae5}.game .card-icon{background:#ede9fe}.generator .card-icon{background:#fef3c7}
+    .card-tag{font-size:.75rem;font-weight:950;letter-spacing:.13em;text-transform:uppercase;color:#64748b}
+    .card h2{font-size:1.55rem;margin:10px 0;color:#172554}
+    .card p{color:#64748b;line-height:1.62;margin:0 0 24px}
+    .card-go{margin-top:auto;font-weight:950;color:#1d4ed8}
+    .visited{position:absolute;right:20px;top:20px;background:#dcfce7;color:#166534;border-radius:999px;padding:6px 10px;font-size:.74rem;font-weight:950;display:none}
+    .card[data-visited="true"] .visited{display:block}
+    footer{border-top:1px solid #dbeafe;padding:28px 0 40px;color:#64748b;text-align:center;line-height:1.55}
+    footer img{width:32px;height:32px;object-fit:contain;opacity:.6;margin-bottom:8px}
+    @media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){.topbar{padding:12px 0;flex-wrap:wrap;justify-content:center}.brand img{width:42px;height:42px}nav{width:100%;justify-content:center;gap:8px}nav a{min-height:46px;padding:11px 18px;font-size:.92rem}main{padding-top:40px}h1{text-align:center;font-size:2.7rem}.cards{grid-template-columns:1fr}.card{min-height:330px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <a class="brand" href="index.html" aria-label="Начална страница"><img src="assets/brand-mark.png" alt="Малък знак на автора"></a>
+      <nav aria-label="Основна навигация">
+        <a href="index.html">Начало</a>
+        <a href="test-generator/index.html">За учителя</a>
+      </nav>
+    </div>
+  </header>
+  <main class="shell">
+    <h1>Ресурси</h1>
+    <div class="cards">
+      <a class="card lesson" href="lesson/index.html" data-module="lesson" data-open-module="lesson"><span class="visited">Посетено ✓</span><div class="card-icon">📘</div><div class="card-tag">Ново знание</div><h2>Интерактивен урок</h2><p>Пермутации, вариации и комбинации с определения, модели и нагледни задачи.</p><span class="card-go">Към урока →</span></a>
+      <a class="card trainer" href="trainer/index.html" data-module="trainer" data-open-module="trainer"><span class="visited">Посетено ✓</span><div class="card-icon">🧩</div><div class="card-tag">Упражнение</div><h2>Тренажор</h2><p>Задачи по трудност, интерактивни подсказки, обратна връзка и подробни решения.</p><span class="card-go">Към тренажора →</span></a>
+      <a class="card game" href="game/index.html" data-module="game" data-open-module="game"><span class="visited">Посетено ✓</span><div class="card-icon">🎮</div><div class="card-tag">Приключение</div><h2>КОД 8</h2><p>Сюжетна игра „Разломът на световете“, в която знанията отключват следващата мисия.</p><span class="card-go">Към играта →</span></a>
+      <a class="card generator" href="test-generator/index.html" data-module="generator" data-open-module="generator"><span class="visited">Посетено ✓</span><div class="card-icon">📝</div><div class="card-tag">Оценяване</div><h2>Контролна работа</h2><p>Генератор на варианти по избрани модели, трудност и брой задачи с отделен ключ.</p><span class="card-go">Към генератора →</span></a>
+    </div>
+  </main>
+  <footer><div class="shell"><img src="assets/brand-mark.png" alt=""><br><strong>© 2026 Валя Витковска</strong></div></footer>
+  <script>
+    const key='combinatorics-unified-progress';
+    const all=['lesson','trainer','game','generator'];
+    const read=()=>{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}};
+    const seen=read().filter(x=>all.includes(x));
+    document.querySelectorAll('[data-module]').forEach(card=>card.dataset.visited=String(seen.includes(card.dataset.module)));
+    document.querySelectorAll('[data-open-module]').forEach(link=>link.addEventListener('click',()=>{
+      const current=read(),id=link.dataset.openModule;
+      if(!current.includes(id)){current.push(id);localStorage.setItem(key,JSON.stringify(current))}
+    }));
+    if('serviceWorker' in navigator&&location.protocol.startsWith('http')) navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  </script>
+</body>
+</html>

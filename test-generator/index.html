@@ -125,16 +125,37 @@
       {id:'mul-e1',model:'mul',diff:'easy',make:r=>{const n=rint(r,3,7),k=rint(r,2,6),ans=n*k;return{text:`Мила разполага с ${n} различни блузи и ${k} различни поли. По колко начина може да избере тоалет от една блуза и една пола?`,ans,expr:`${n} · ${k} = ${ans}`,note:'Изборът се извършва на две последователни стъпки.'}}},
       {id:'mul-m1',model:'mul',diff:'medium',make:r=>{const n=rint(r,3,7),k=rint(r,4,9),ans=n*n*k*k*k;return{text:`Код се състои последователно от две букви и три цифри. За всяка буквена позиция са допустими ${n} букви, а за всяка цифрова позиция — ${k} цифри. Повторенията са разрешени. Колко различни кода могат да се образуват?`,ans,expr:`${n}² · ${k}³ = ${ans}`,note:'Изборите за петте позиции са независими.'}}},
       {id:'mul-h1',model:'mul',diff:'hard',make:r=>{const n=rint(r,6,8),k=rint(r,2,3),ans=fact(n-k+1)*fact(k);return{text:`На рафт се подреждат ${n} различни книги. По колко начина могат да бъдат подредени, ако ${k} определени книги трябва да бъдат една до друга?`,ans,expr:`(${n}-${k}+1)! · ${k}! = ${ans}`,note:'Определените книги се разглеждат като един блок.'}}},
-      {id:'perm-e1',model:'perm',diff:'easy',make:r=>{const n=rint(r,4,7),ans=fact(n);return{text:`По колко начина могат да се подредят ${n} различни книги една до друга на рафт?`,ans,expr:`${n}! = ${ans}`,note:'Подреждат се всички различни обекти.'}}},
-      {id:'perm-m1',model:'perm',diff:'medium',make:r=>{const n=rint(r,6,9),ans=fact(n-1);return{text:`В редица се подреждат ${n} ученици. Колко подредби са възможни, ако един определен ученик трябва да бъде на първо място?`,ans,expr:`(${n}-1)! = ${ans}`,note:'Първата позиция е фиксирана.'}}},
-      {id:'perm-h1',model:'perm',diff:'hard',make:r=>{const n=rint(r,5,8),ans=fact(n-1);return{text:`${n} души сядат около кръгла маса. Подредби, получени само чрез завъртане, се смятат за еднакви. Колко различни подредби има?`,ans,expr:`(${n}-1)! = ${ans}`,note:'Използва се кръгова пермутация.'}}},
+      {id:'mul-h2',model:'mul',diff:'hard',make:r=>{const n=rint(r,3,6),k=rint(r,3,6),ans=fact(n)*fact(k);return{text:`За обща снимка ${n} момичета сядат на първия ред, а ${k} момчета се подреждат на втория ред. По колко начина могат да се подредят участниците?`,ans,expr:`${n}! · ${k}! = ${ans}`,note:'Подредбите в двата реда се избират независимо.'}}},
+      {id:'mul-h3',model:'mul',diff:'hard',make:r=>{const n=rint(r,6,10),k=rint(r,4,8),ans=3*k*n*(n-1);return{text:`Измежду ${n} мъже и ${k} жени се избират председател, заместник-председател и секретар. Точно една от длъжностите трябва да бъде заета от жена. По колко начина може да стане това?`,ans,expr:`3 · ${k} · ${n} · ${n-1} = ${ans}`,note:'Избира се длъжността на жената, жената и подредена двойка мъже.'}}},
+      {id:'perm-e1',model:'perm',diff:'easy',make:r=>{const n=rint(r,4,9),ans=fact(n);return{text:`По колко начина могат да се подредят ${n} различни книги една до друга на рафт?`,ans,expr:`${n}! = ${ans}`,note:'Подреждат се всички различни обекти.'}}},
+      {id:'perm-e2',model:'perm',diff:'easy',make:r=>{const n=rint(r,4,9),ans=fact(n);return{text:`На табло трябва да се подредят в редица ${n} различни снимки. Колко подредби са възможни?`,ans,expr:`${n}! = ${ans}`,note:'Всички снимки участват и редът има значение.'}}},
+      {id:'perm-e3',model:'perm',diff:'easy',make:r=>{const n=rint(r,4,9),ans=fact(n);return{text:`Пред училището се нареждат ${n} различни знамена. По колко начина могат да бъдат подредени?`,ans,expr:`${n}! = ${ans}`,note:'Търси се пермутация на всички различни знамена.'}}},
+      {id:'perm-m1',model:'perm',diff:'medium',make:r=>{const n=rint(r,6,11),ans=fact(n-1);return{text:`В редица се подреждат ${n} ученици. Колко подредби са възможни, ако един определен ученик трябва да бъде на първо място?`,ans,expr:`(${n}-1)! = ${ans}`,note:'Първата позиция е фиксирана.'}}},
+      {id:'perm-m2',model:'perm',diff:'medium',make:r=>{const n=rint(r,5,9),ans=fact(n-1);return{text:`На рафт се подреждат ${n} различни книги, като речникът трябва да остане най-вляво. По колко начина могат да бъдат подредени книгите?`,ans,expr:`(${n}-1)! = ${ans}`,note:'Мястото на речника е фиксирано.'}}},
+      {id:'perm-m3',model:'perm',diff:'medium',make:r=>{const n=rint(r,6,10),ans=fact(n-1);return{text:`В крайното класиране се подреждат ${n} състезатели, като един определен състезател трябва да бъде последен. Колко подредби са възможни?`,ans,expr:`(${n}-1)! = ${ans}`,note:'Последната позиция е фиксирана.'}}},
+      {id:'perm-h1',model:'perm',diff:'hard',make:r=>{const n=rint(r,5,10),ans=fact(n-1);return{text:`${n} души сядат около кръгла маса. Подредби, получени само чрез завъртане, се смятат за еднакви. Колко различни подредби има?`,ans,expr:`(${n}-1)! = ${ans}`,note:'Използва се кръгова пермутация.'}}},
+      {id:'perm-h2',model:'perm',diff:'hard',make:r=>{const n=rint(r,7,12),ans=fact(n-2);return{text:`В редица се подреждат ${n} състезатели. Един определен състезател трябва да е първи, а друг определен — последен. Колко подредби са възможни?`,ans,expr:`(${n}-2)! = ${ans}`,note:'Двете крайни позиции са фиксирани.'}}},
+      {id:'perm-h3',model:'perm',diff:'hard',make:r=>{const n=rint(r,5,9),ans=2*fact(n-1);return{text:`В редица се подреждат ${n} различни автомобила. Два определени автомобила трябва да бъдат един до друг. Колко подредби са възможни?`,ans,expr:`2 · (${n}-1)! = ${ans}`,note:'Двата автомобила образуват блок и могат да разменят местата си.'}}},
       {id:'var-e1',model:'var',diff:'easy',make:r=>{const n=rint(r,6,10),ans=V(n,2);return{text:`От ${n} ученици се избират председател и заместник-председател. Един ученик не може да заема и двете длъжности. По колко начина може да стане изборът?`,ans,expr:`V(${n},2) = ${ans}`,note:'Длъжностите са различни, затова редът има значение.'}}},
+      {id:'var-e2',model:'var',diff:'easy',make:r=>{const n=rint(r,6,12),ans=V(n,3);return{text:`В турнир участват ${n} отбора. По колко начина могат да се разпределят златният, сребърният и бронзовият медал?`,ans,expr:`V(${n},3) = ${ans}`,note:'Трите места са различни и редът има значение.'}}},
+      {id:'var-e3',model:'var',diff:'easy',make:r=>{const n=rint(r,6,10),k=rint(r,2,4),ans=V(n,k);return{text:`От ${n} ученици се избират ${k}, които да заемат ${k} различни номерирани места на сцената. Колко разпределения са възможни?`,ans,expr:`V(${n},${k}) = ${ans}`,note:'Избраните ученици се разпределят по различни места.'}}},
       {id:'var-m1',model:'var',diff:'medium',make:r=>{const n=rint(r,8,12),k=rint(r,3,5),ans=V(n,k);return{text:`В състезание участват ${n} финалисти. По колко начина могат да бъдат заети първите ${k} места, ако няма равни резултати?`,ans,expr:`V(${n},${k}) = ${ans}`,note:'Избират се и се подреждат част от участниците.'}}},
+      {id:'var-m2',model:'var',diff:'medium',make:r=>{const n=rint(r,6,10),k=rint(r,3,5),ans=V(n,k);return{text:`Знаме се състои от ${k} хоризонтални ивици в различни цветове, избрани от ${n} налични цвята. Колко различни знамена могат да се съставят?`,ans,expr:`V(${n},${k}) = ${ans}`,note:'Избират се цветове и се подреждат по позиции.'}}},
+      {id:'var-m3',model:'var',diff:'medium',make:r=>{const n=rint(r,7,11),k=rint(r,3,5),ans=V(n,k);return{text:`За изложба се избират и подреждат в редица ${k} от общо ${n} различни картини. Колко експозиции са възможни?`,ans,expr:`V(${n},${k}) = ${ans}`,note:'Участват част от картините и редът им има значение.'}}},
       {id:'var-h1',model:'var',diff:'hard',make:r=>{const n=rint(r,6,9),ans=n*n*(n-1)*(n-2);return{text:`С цифрите от 0 до ${n} се образуват четирицифрени числа без повторение на цифра. Колко такива числа има?`,ans,expr:`${n} · ${n} · ${n-1} · ${n-2} = ${ans}`,note:'Първата цифра не може да бъде 0.'}}},
+      {id:'var-h2',model:'var',diff:'hard',make:r=>{const n=rint(r,7,10),k=rint(r,3,5),ans=k*V(n-1,k-1);return{text:`Код с дължина ${k} се образува от ${n} различни символа без повторение. Един предварително определен символ задължително участва. Колко кода са възможни?`,ans,expr:`${k} · V(${n-1},${k-1}) = ${ans}`,note:'Избира се позицията на задължителния символ и се подреждат останалите.'}}},
+      {id:'var-h3',model:'var',diff:'hard',make:r=>{const n=rint(r,7,10),k=rint(r,4,5),ans=2*V(n-1,k-1);return{text:`Знаме има ${k} хоризонтални ивици в различни цветове, избрани от ${n} налични цвята. Най-горната ивица трябва да бъде в един от два определени цвята. Колко знамена са възможни?`,ans,expr:`2 · V(${n-1},${k-1}) = ${ans}`,note:'Избира се горният цвят и се подреждат останалите ивици.'}}},
+      {id:'var-h4',model:'var',diff:'hard',make:r=>{const n=rint(r,9,13),k=rint(r,4,6),ans=V(n,k)-2*(n-1)*V(n-2,k-2);return{text:`В кинозала има ${n} места в един ред. На тях сядат ${k} определени приятели. Двама конкретни приятели не желаят да бъдат един до друг. По колко начина могат да седнат?`,ans,expr:`V(${n},${k}) - 2 · ${n-1} · V(${n-2},${k-2}) = ${ans}`,note:'От всички разпределения се изваждат тези, в които двамата са на съседни места.'}}},
       {id:'comb-e1',model:'comb',diff:'easy',make:r=>{const n=rint(r,7,11),k=rint(r,2,4),ans=C(n,k);return{text:`От ${n} ученици се избира екип от ${k} ученици. По колко начина може да бъде съставен екипът?`,ans,expr:`C(${n},${k}) = ${ans}`,note:'Редът на учениците в екипа няма значение.'}}},
+      {id:'comb-e2',model:'comb',diff:'easy',make:r=>{const n=rint(r,6,10),k=rint(r,2,4),ans=C(n,k);return{text:`В купа има ${n} различни плода. За смути се избират ${k} различни плода. По колко начина може да стане изборът?`,ans,expr:`C(${n},${k}) = ${ans}`,note:'Избира се група и редът няма значение.'}}},
+      {id:'comb-e3',model:'comb',diff:'easy',make:r=>{const n=rint(r,6,10),k=rint(r,2,4),ans=C(n,k);return{text:`Пицария предлага ${n} различни добавки. За една пица се избират ${k} различни добавки. Колко различни избора са възможни?`,ans,expr:`C(${n},${k}) = ${ans}`,note:'Подредбата на избраните добавки не се отчита.'}}},
       {id:'comb-m1',model:'comb',diff:'medium',make:r=>{const n=rint(r,8,14),ans=C(n,2);return{text:`Дадени са ${n} точки, никои три от които не лежат на една права. Колко различни отсечки се определят от тях?`,ans,expr:`C(${n},2) = ${ans}`,note:'Всяка отсечка се определя от двойка точки.'}}},
+      {id:'comb-m2',model:'comb',diff:'medium',make:r=>{const n=rint(r,7,15),ans=C(n,2);return{text:`На среща присъстват ${n} души и всеки двама се ръкуват точно веднъж. Колко ръкостискания има?`,ans,expr:`C(${n},2) = ${ans}`,note:'Всяко ръкостискане се определя от неупорядочена двойка.'}}},
+      {id:'comb-m3',model:'comb',diff:'medium',make:r=>{const n=rint(r,9,14),k=rint(r,3,5),ans=C(n,k);return{text:`От ${n} кандидати се избира жури от ${k} равноправни членове. Колко различни състава са възможни?`,ans,expr:`C(${n},${k}) = ${ans}`,note:'Членовете са равноправни и редът им няма значение.'}}},
       {id:'comb-h1',model:'comb',diff:'hard',make:r=>{const n=rint(r,7,11),ans=C(n,4);return{text:`В изпъкнал ${n}-ъгълник са прекарани всички диагонали. Никои три диагонала не се пресичат в една вътрешна точка. Колко вътрешни пресечни точки се получават?`,ans,expr:`C(${n},4) = ${ans}`,note:'Всяка пресечна точка се определя от четири върха.'}}},
-      {id:'comb-h2',model:'comb',diff:'hard',make:r=>{const n=rint(r,9,15),ans=C(n,2)-n;return{text:`Намерете броя на диагоналите на изпъкнал ${n}-ъгълник.`,ans,expr:`C(${n},2) - ${n} = ${ans}`,note:'От всички отсечки между върхове се изключват страните.'}}}
+      {id:'comb-h2',model:'comb',diff:'hard',make:r=>{const n=rint(r,9,15),ans=C(n,2)-n;return{text:`Намерете броя на диагоналите на изпъкнал ${n}-ъгълник.`,ans,expr:`C(${n},2) - ${n} = ${ans}`,note:'От всички отсечки между върхове се изключват страните.'}}},
+      {id:'comb-h3',model:'comb',diff:'hard',make:r=>{const n=rint(r,7,12),k=rint(r,6,10),ans=C(n,3)*C(k,2);return{text:`За контролна работа се избират 3 задачи по алгебра от ${n} и 2 задачи по геометрия от ${k}. Колко различни варианта са възможни?`,ans,expr:`C(${n},3) · C(${k},2) = ${ans}`,note:'Двата независими избора се извършват чрез комбинации.'}}},
+      {id:'comb-h4',model:'comb',diff:'hard',make:r=>{const n=rint(r,6,10),ans=C(n,3);return{text:`Дадени са ${n} точки в пространството, никои четири от които не лежат в една равнина. Колко равнини се определят от тези точки?`,ans,expr:`C(${n},3) = ${ans}`,note:'Всяка равнина се определя еднозначно от три от точките.'}}}
     ];
 
     function difficultyFor(index,count,selected){
@@ -150,7 +171,10 @@
         if(!candidates.length)candidates=bank.filter(x=>models.includes(x.model));
         const leastUsed=Math.min(...models.map(model=>result.filter(x=>x.model===model).length));
         const balanced=candidates.filter(x=>result.filter(y=>y.model===x.model).length===leastUsed);
-        result.push(choose(rng,balanced.length?balanced:candidates));
+        const modelBalanced=balanced.length?balanced:candidates;
+        const leastTemplateUsed=Math.min(...modelBalanced.map(spec=>result.filter(x=>x.id===spec.id).length));
+        const templateBalanced=modelBalanced.filter(spec=>result.filter(x=>x.id===spec.id).length===leastTemplateUsed);
+        result.push(choose(rng,templateBalanced));
       }
       return result;
     }
@@ -181,13 +205,18 @@
       const blueprints=selectBlueprints(models,difficulty,count,blueprintRng);
       let html='';
       const keys=[];
-      const usedTaskTexts=Array.from({length:count},()=>new Set());
+      const usedTextsByPosition=Array.from({length:count},()=>new Set());
       for(let v=0;v<variantCount;v++){
         const rng=rngFrom(baseSeed+(v+1)*7919);
+        const usedTextsInVariant=new Set();
         const tasks=blueprints.map((spec,index)=>{
           let generated,attempts=0;
-          do{generated=spec.make(rng);attempts++}while(usedTaskTexts[index].has(generated.text)&&attempts<24);
-          usedTaskTexts[index].add(generated.text);
+          do{
+            generated=spec.make(rng);
+            attempts++;
+          }while((usedTextsByPosition[index].has(generated.text)||usedTextsInVariant.has(generated.text))&&attempts<200);
+          usedTextsByPosition[index].add(generated.text);
+          usedTextsInVariant.add(generated.text);
           return {...generated,model:spec.model,diff:spec.diff,points:diffPoints[spec.diff]};
         });
         const total=tasks.reduce((sum,t)=>sum+t.points,0);
