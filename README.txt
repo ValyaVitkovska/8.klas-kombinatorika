@@ -43,5 +43,5 @@
 
 ИЗОБРАЖЕНИЯ И ПОДПИС
 --------------------
-- assets/emoji3d.js заменя емоджитата в урока, тренажора и играта с обемни изображения от assets/3d (Microsoft Fluent Emoji 3D, лиценз MIT – вж. assets/3d/LICENSE.txt).
+- assets/emoji3d.js заменя емоджитата в урока, тренажора и играта с обемни изображения, вградени в самия файл (Microsoft Fluent Emoji 3D, лиценз MIT – вж. assets/fluent-emoji-LICENSE.txt).
 - assets/site-footer.js добавя логото и авторския подпис в долната част на всяка страница. Текстът на подписа се променя само в този файл.

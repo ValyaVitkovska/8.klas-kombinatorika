@@ -508,13 +508,6 @@
     </div>
 </div>
 
-<footer class="mt-auto py-8 px-5 text-center text-sm text-slate-600 border-t border-white/70 bg-white/75 backdrop-blur-md">
-    <img src="assets/brand-mark.png" alt="" class="w-8 h-8 object-contain mx-auto mb-3 opacity-60" aria-hidden="true" decoding="async">
-    <p class="font-bold text-slate-800">© 2026 Валя Витковска</p>
-    <p class="mt-1">Автор и педагогически дизайнер на ресурса: Валя Витковска.</p>
-    <p class="mt-1">Съдържанието, задачите, методическата структура, редакцията и окончателната проверка са авторски.</p>
-    <p class="mt-2 text-xs opacity-80">Дигиталният ресурс е разработен с подкрепата на AI инструменти под авторски контрол. AI е използван като технически и творчески помощник, а не като самостоятелен автор.</p>
-</footer>
 
 <script>
 const typesMap = { 'add': 'Правило за събиране', 'mul': 'Правило за умножение', 'perm': 'Пермутация', 'var': 'Вариация', 'comb': 'Комбинация' };
@@ -1762,7 +1755,7 @@ function enableHintInteractions(container, currentTask) {
                     const sourceId = el.dataset.sourceId || `code-${selectedObjects.length}`;
                     selectedObjects.push({
                         id: `${sourceId}-${selectedObjects.length}`,
-                        token: el.dataset.token || el.innerText.trim() || '●',
+                        token: el.dataset.token || (window.Emoji3D ? window.Emoji3D.text(el) : el.innerText).trim() || '●',
                         group: sourceGroup,
                         identity: el.dataset.identity || sourceGroup
                     });
@@ -1792,7 +1785,7 @@ function enableHintInteractions(container, currentTask) {
             if (active) {
                 selectedObjects.push({
                     id: sourceId,
-                    token: el.dataset.token || el.innerText.trim() || '●',
+                    token: el.dataset.token || (window.Emoji3D ? window.Emoji3D.text(el) : el.innerText).trim() || '●',
                     group: el.dataset.group || 'избран обект',
                     identity: el.dataset.identity || el.dataset.group || 'избран обект'
                 });
@@ -2294,5 +2287,8 @@ function calcEq() {
 function calcClear() { calcVal = '0'; calcExpression = ''; calcNew = true; updateCalcDisplay(); }
 
 </script>
+<style>.hint-object img.e3d,.workbench img.e3d{height:1.75em!important}</style>
+<script src="../assets/emoji3d.js"></script>
+<script src="../assets/site-footer.js" defer></script>
 </body>
 </html>

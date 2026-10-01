@@ -11,6 +11,8 @@
     <!-- Зареждане на React и ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Обемни 3D изображения вместо емоджи (трябва да е след React и преди урока) -->
+    <script src="../assets/emoji3d.js"></script>
     
     <!-- Зареждане на Babel за компилиране на JSX в браузъра -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -387,7 +389,7 @@
           if (!fromEl || !toEl || ms <= 0 || prefersReducedMotion()) { resolve(); return; }
           const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
           const el = document.createElement('div');
-          el.textContent = content;
+          if (window.Emoji3D) el.innerHTML = window.Emoji3D.html(content); else el.textContent = content;
           Object.assign(el.style, {
             position: 'fixed', left: `${a.left + a.width / 2}px`, top: `${a.top + a.height / 2}px`,
             fontSize: getComputedStyle(fromEl).fontSize, lineHeight: '1', zIndex: 9999, pointerEvents: 'none',
@@ -494,6 +496,13 @@
           const TRANSPORT_NAMES = { '🚌': 'автобус', '🚆': 'влак', '🚗': 'кола', '🚲': 'велосипед' };
           const theaterIds = Array.from({ length: theaterCount }, (_, i) => `Т${i + 1}`);
           const choirIds = Array.from({ length: choirCount }, (_, i) => `Х${i + 1}`);
+          const THEATER_FACES = ['👧', '👦🏻', '🧒🏽', '👩🏼', '👦🏾', '👧🏼', '🧑', '👩🏽', '👦', '🧒🏻'];
+          const CHOIR_FACES = ['👦🏼', '👧🏽', '🧑🏻', '👧', '🧒', '👦🏽', '👩', '👧🏾', '🧑🏼', '👦🏻'];
+          const theaterFaces = THEATER_FACES.slice(0, theaterCount);
+          const choirFaces = CHOIR_FACES.slice(0, choirCount);
+          const faceOf = (id) => (id[0] === 'Т' ? THEATER_FACES : CHOIR_FACES)[Number(id.slice(1)) - 1];
+          const exploredT = exploredAlternatives.filter(x => x[0] === 'Т').length;
+          const exploredX = exploredAlternatives.filter(x => x[0] === 'Х').length;
           const allAlternatives = [...theaterIds, ...choirIds];
           const routes = Array.from({ length: routeCount }, (_, i) => i + 1);
           const transports = TRANSPORT_POOL.slice(0, transportCount);
@@ -551,7 +560,7 @@
               const next = allAlternatives.find(id => !exploredRef.current.includes(id));
               if (!next) break;
               const ms = currentMs();
-              await flyEmoji(q(`[data-alt="${next}"]`), q(`[data-altslot="${next}"]`), next, ms * 0.8, false);
+              await flyEmoji(q(`[data-alt="${next}"] .text-4xl`), q(`[data-altslot="${next}"]`), faceOf(next), ms * 0.9, false);
               if (!aliveRef.current) return;
               exploredRef.current = [...exploredRef.current, next];
               setExploredAlternatives(exploredRef.current);
@@ -725,50 +734,105 @@
                     По колко начина може да се направи изборът?
                   </p>
                   <div className="flex flex-wrap gap-3 mb-4">
-                    <Stepper label="Театрална група" value={theaterCount} min={1} max={10} onChange={setTheaterCount} disabled={!!isAnimating} tone="blue" />
-                    <Stepper label="Хор" value={choirCount} min={1} max={10} onChange={setChoirCount} disabled={!!isAnimating} tone="cyan" />
+                    <Stepper label="🎭 Театрална група" value={theaterCount} min={1} max={10} onChange={setTheaterCount} disabled={!!isAnimating} tone="rose" />
+                    <Stepper label="🎵 Хор" value={choirCount} min={1} max={10} onChange={setChoirCount} disabled={!!isAnimating} tone="indigo" />
                   </div>
+
                   <div className="rounded-2xl bg-white border border-blue-200 p-4 mb-5">
                     <div className="font-bold text-blue-900 mb-3">Симулация: натискай учениците, за да разгледаш възможните единични избори</div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {theaterIds.map((id, i) => (
-                        <span key={id} className="inline-block animate-pop-in" style={{ animationDelay: `${i * 40}ms`, opacity: 0 }}>
-                          <button data-alt={id} onClick={() => toggleAlternative(id)} aria-pressed={exploredAlternatives.includes(id)}
-                            className={`w-12 h-12 rounded-full font-extrabold transition-all duration-300 ${exploredAlternatives.includes(id) ? 'bg-blue-600 text-white scale-90' : 'bg-blue-100 text-blue-900 hover:scale-110'}`}>
-                            {id}
-                          </button>
-                        </span>
-                      ))}
-                      <span className={`px-2 font-black text-blue-700 ${isAnimating === 'add' ? 'animate-pulse' : ''}`}>ИЛИ</span>
-                      {choirIds.map((id, i) => (
-                        <span key={id} className="inline-block animate-pop-in" style={{ animationDelay: `${(theaterCount + i) * 40}ms`, opacity: 0 }}>
-                          <button data-alt={id} onClick={() => toggleAlternative(id)} aria-pressed={exploredAlternatives.includes(id)}
-                            className={`w-12 h-12 rounded-full font-extrabold transition-all duration-300 ${exploredAlternatives.includes(id) ? 'bg-cyan-600 text-white scale-90' : 'bg-cyan-100 text-cyan-900 hover:scale-110'}`}>
-                            {id}
-                          </button>
-                        </span>
-                      ))}
+
+                    {/* Две отделни групи – сцена и хор */}
+                    <div className="grid lg:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
+                      <div className="relative rounded-2xl overflow-hidden border-2 border-rose-300 bg-gradient-to-b from-rose-900 via-rose-700 to-amber-600 p-4 pt-12 shadow-inner">
+                        <div className="absolute inset-x-0 top-0 h-9 bg-[repeating-linear-gradient(90deg,#7f1d1d_0_18px,#991b1b_18px_36px)] rounded-b-[40%] shadow-lg" aria-hidden="true"></div>
+                        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-amber-300 text-rose-900 font-black text-sm px-3 py-1 rounded-full shadow whitespace-nowrap">🎭 Театрална сцена · {theaterCount}</div>
+                        <div className="flex flex-wrap justify-center gap-3 pt-2">
+                          {theaterIds.map((id, i) => {
+                            const on = exploredAlternatives.includes(id);
+                            return (
+                              <span key={id} className="inline-block animate-pop-in" style={{ animationDelay: `${i * 45}ms`, opacity: 0 }}>
+                                <button data-alt={id} onClick={() => toggleAlternative(id)} aria-pressed={on} aria-label={`Ученик ${id} от театралната група`}
+                                  className={`relative flex flex-col items-center w-16 rounded-2xl pt-1.5 pb-1 transition-all duration-300 ${on ? 'bg-amber-200 ring-4 ring-amber-300 -translate-y-1' : 'bg-white/90 hover:-translate-y-1 hover:bg-white'}`}
+                                  style={on ? { boxShadow: '0 0 22px 6px rgba(253,230,138,.75)' } : undefined}>
+                                  <span className="text-4xl leading-none">{theaterFaces[i]}</span>
+                                  <span className="text-[11px] font-extrabold text-rose-800 mt-0.5">{id}</span>
+                                  <span className="absolute -top-2 -right-2 text-lg">🎭</span>
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <div className="h-3 mt-4 rounded-full bg-amber-900/40" aria-hidden="true"></div>
+                      </div>
+
+                      <div className="flex lg:flex-col items-center justify-center gap-2">
+                        <span className={`w-16 h-16 rounded-full bg-amber-400 text-white grid place-items-center text-xl font-black shadow-lg border-4 border-white ${isAnimating === 'add' ? 'animate-pulse' : ''}`}>ИЛИ</span>
+                        <span className="text-xs font-bold text-slate-500 text-center max-w-[7rem]">групите нямат общи ученици</span>
+                      </div>
+
+                      <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-300 bg-gradient-to-b from-indigo-900 via-violet-700 to-fuchsia-600 p-4 pt-12 shadow-inner">
+                        <div className="absolute inset-0 opacity-20 text-white text-3xl select-none pointer-events-none" aria-hidden="true" data-no3d="">
+                          <span className="absolute left-3 top-10">♪</span><span className="absolute right-6 top-14">♫</span><span className="absolute left-1/3 bottom-6">♩</span><span className="absolute right-1/4 bottom-3">♬</span>
+                        </div>
+                        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-sky-200 text-indigo-900 font-black text-sm px-3 py-1 rounded-full shadow whitespace-nowrap">🎵 Училищен хор · {choirCount}</div>
+                        <div className="flex flex-wrap justify-center gap-3 pt-2 relative">
+                          {choirIds.map((id, i) => {
+                            const on = exploredAlternatives.includes(id);
+                            return (
+                              <span key={id} className="inline-block animate-pop-in" style={{ animationDelay: `${(theaterCount + i) * 45}ms`, opacity: 0 }}>
+                                <button data-alt={id} onClick={() => toggleAlternative(id)} aria-pressed={on} aria-label={`Ученик ${id} от хора`}
+                                  className={`relative flex flex-col items-center w-16 rounded-2xl pt-1.5 pb-1 transition-all duration-300 ${on ? 'bg-sky-200 ring-4 ring-sky-300 -translate-y-1' : 'bg-white/90 hover:-translate-y-1 hover:bg-white'}`}
+                                  style={on ? { boxShadow: '0 0 22px 6px rgba(186,230,253,.8)' } : undefined}>
+                                  <span className="text-4xl leading-none">{choirFaces[i]}</span>
+                                  <span className="text-[11px] font-extrabold text-indigo-800 mt-0.5">{id}</span>
+                                  <span className="absolute -top-2 -right-2 text-lg">🎵</span>
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <div className="h-3 mt-4 rounded-full bg-indigo-950/40" aria-hidden="true"></div>
+                      </div>
                     </div>
 
-                    <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-3">
-                      <div className="text-sm font-bold text-slate-600 mb-2">Всяка клетка е един възможен избор:</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {allAlternatives.map(id => {
-                          const on = exploredAlternatives.includes(id);
-                          const isT = id[0] === 'Т';
-                          return (
-                            <div key={id} data-altslot={id} className={`w-11 h-11 rounded-lg grid place-items-center text-sm font-extrabold border-2 transition-all duration-300 ${on ? (isT ? 'bg-blue-600 border-blue-700 text-white animate-pop-in' : 'bg-cyan-600 border-cyan-700 text-white animate-pop-in') : (isT ? 'border-dashed border-blue-300 bg-white text-transparent' : 'border-dashed border-cyan-300 bg-white text-transparent')}`}>
-                              {id}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="mt-3 text-center text-lg">
-                        <span className="inline-block px-3 py-1 rounded-lg bg-blue-100 text-blue-800 font-bold">{exploredAlternatives.filter(x => x[0] === 'Т').length}</span>
-                        <span className="mx-2 font-bold text-gray-500">+</span>
-                        <span className="inline-block px-3 py-1 rounded-lg bg-cyan-100 text-cyan-800 font-bold">{exploredAlternatives.filter(x => x[0] === 'Х').length}</span>
-                        <span className="mx-2 font-bold text-gray-500">=</span>
-                        <span key={exploredAlternatives.length} className="inline-block px-3 py-1 rounded-lg bg-slate-800 text-white font-bold animate-bump">{exploredAlternatives.length}</span>
+                    {/* Лентата на възможностите – две части, които се събират */}
+                    <div className="mt-5 rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                      <div className="text-sm font-bold text-slate-600 mb-3">Всеки участник е <strong>една</strong> възможност. Събираме двете части:</div>
+                      <div className="flex flex-wrap items-start justify-center gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="flex flex-wrap gap-1.5 justify-center p-2 rounded-xl bg-rose-50 border-2 border-rose-200">
+                            {theaterIds.map((id, i) => {
+                              const on = exploredAlternatives.includes(id);
+                              return (
+                                <div key={id} data-altslot={id} className={`w-11 h-11 rounded-lg grid place-items-center text-2xl border-2 transition-all duration-300 ${on ? 'bg-white border-rose-400 animate-pop-in' : 'border-dashed border-rose-300 bg-white/60'}`}>
+                                  {on ? theaterFaces[i] : ''}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="w-full mt-1 h-3 border-x-2 border-b-2 border-rose-400 rounded-b-lg" aria-hidden="true"></div>
+                          <div className="mt-1 text-sm font-extrabold text-rose-700">🎭 театър: <span key={exploredT} className="animate-bump">{exploredT}</span></div>
+                        </div>
+                        <div className="self-center text-3xl font-black text-amber-500 pb-6">+</div>
+                        <div className="flex flex-col items-center">
+                          <div className="flex flex-wrap gap-1.5 justify-center p-2 rounded-xl bg-indigo-50 border-2 border-indigo-200">
+                            {choirIds.map((id, i) => {
+                              const on = exploredAlternatives.includes(id);
+                              return (
+                                <div key={id} data-altslot={id} className={`w-11 h-11 rounded-lg grid place-items-center text-2xl border-2 transition-all duration-300 ${on ? 'bg-white border-indigo-400 animate-pop-in' : 'border-dashed border-indigo-300 bg-white/60'}`}>
+                                  {on ? choirFaces[i] : ''}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="w-full mt-1 h-3 border-x-2 border-b-2 border-indigo-400 rounded-b-lg" aria-hidden="true"></div>
+                          <div className="mt-1 text-sm font-extrabold text-indigo-700">🎵 хор: <span key={exploredX} className="animate-bump">{exploredX}</span></div>
+                        </div>
+                        <div className="self-center text-3xl font-black text-slate-400 pb-6">=</div>
+                        <div className="self-center pb-6 flex flex-col items-center">
+                          <span key={exploredAlternatives.length} className={`inline-grid place-items-center min-w-[4rem] h-16 px-3 rounded-2xl text-3xl font-black animate-bump ${exploredAlternatives.length === addAnswer ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-white'}`}>{exploredAlternatives.length}</span>
+                          <span className="text-xs font-bold text-slate-500 mt-1">общо</span>
+                        </div>
                       </div>
                     </div>
 
@@ -1862,13 +1926,6 @@
                   </button>
                 </div>
               )}
-
-              {/* АВТОРСКИ ПРАВА */}
-              <div className="mt-auto pt-8 border-t border-gray-100 text-center text-xs text-gray-400">
-                <p>© Валя Витковска, 2026</p>
-                <p>Авторска идея, методическа разработка, редакция и проверка: Валя Витковска.</p>
-                <p>Създадено с помощта на AI инструменти</p>
-              </div>
             </div>
           );
         };
@@ -2094,7 +2151,6 @@
                 </main>
               </div>
               
-              <SmallLogo onHome={() => { setLessonPath(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
             </div>
           );
         }
@@ -2102,5 +2158,6 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+    <script src="../assets/site-footer.js" defer></script>
 </body>
 </html>
