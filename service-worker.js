@@ -1,4 +1,4 @@
-const CACHE='combinatorics-unified-v27';
+const CACHE='combinatorics-unified-v29';
 const LOCAL=[
   './','./index.html','./resources.html','./manifest.webmanifest','./assets/brand-mark.png','./assets/geo-assistant.png','./assets/kombinatorika-intro.mp4',
   './lesson/index.html',

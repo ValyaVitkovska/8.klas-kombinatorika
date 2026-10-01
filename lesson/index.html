@@ -663,6 +663,16 @@
               </div>
 
               {activeChallenge === 'summary' && (
+              <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm animate-fade-in">
+                <h4 className="text-xl font-extrabold text-slate-800 mb-3">Основни понятия</h4>
+                <ul className="space-y-2 text-gray-700 leading-relaxed">
+                  <li>Дялът от математиката, който се занимава с образуването и преброяването на елементите на множества, подчинени на разнообразни условия, се нарича <strong>комбинаторика</strong>.</li>
+                  <li>Множествата, които образуваме, като избираме елементи от едно или повече дадени множества, се наричат <strong>съединения (възможности)</strong>. Най-често използваните са <strong>пермутации, вариации и комбинации</strong>.</li>
+                  <li>Броят на елементите на едно съединение определя неговия <strong>клас</strong>. Например съединение с 5 елемента, образувано от множество с 10 елемента, е съединение от 10 елемента от 5-и клас.</li>
+                </ul>
+              </div>
+              )}
+              {activeChallenge === 'summary' && (
               <div className="grid lg:grid-cols-2 gap-6 animate-fade-in">
                 <article className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-6 shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
@@ -672,14 +682,22 @@
                       <p className="text-blue-700 font-bold">Ключова дума: „ИЛИ“</p>
                     </div>
                   </div>
-                  <p className="text-gray-700 leading-relaxed mb-5">
-                    Ако един избор може да се направи по <strong>m</strong> начина от група A
-                    <strong> или</strong> по <strong>n</strong> начина от отделна група B, като двата случая не се припокриват,
-                    общият брой възможности е:
+                  <p className="text-gray-700 leading-relaxed mb-4">
+                    <strong>Правило за събиране на възможности (съединения).</strong> Нека елементът <MathFormula tex="a" /> може
+                    да се избере по <MathFormula tex="n" /> различни начина, а елементът <MathFormula tex="b" /> — по <MathFormula tex="m" /> различни
+                    начина. Тогава изборът на <MathFormula tex="a" /> <strong>или</strong> на <MathFormula tex="b" /> може да се извърши по
                   </p>
-                  <div className="bg-white rounded-2xl border border-blue-100 p-4 text-center text-2xl text-blue-900 mb-5">
-                    <MathFormula tex="m+n" display={true} />
+                  <div className="bg-white rounded-2xl border border-blue-100 p-4 text-center text-2xl text-blue-900 mb-4">
+                    <MathFormula tex="n+m" display={true} />
+                    <div className="text-sm text-gray-500">начина.</div>
                   </div>
+                  <p className="text-gray-700 text-sm leading-relaxed mb-2">
+                    <strong>Обобщение.</strong> Правилото важи и за повече от два избора. Например при 2 вида сака, 4 вида якета
+                    и 5 вида шапки, от които се избира <strong>една</strong> покупка, начините са <MathFormula tex="2+4+5=11" />.
+                  </p>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-5 italic">
+                    Внимание: избира се само един елемент, а групите нямат общи елементи — иначе някои възможности ще се преброят два пъти.
+                  </p>
                   <div className="rounded-2xl bg-white/80 border border-white p-4">
                     <p className="font-bold text-blue-900 mb-3">Пример: избираме един представител</p>
                     <div className="flex flex-wrap items-center justify-center gap-3 text-center">
@@ -700,13 +718,22 @@
                       <p className="text-emerald-700 font-bold">Ключова дума: „И“</p>
                     </div>
                   </div>
-                  <p className="text-gray-700 leading-relaxed mb-5">
-                    Ако първата стъпка има <strong>m</strong> възможности и за всеки неин избор
-                    втората стъпка има <strong>n</strong> възможности, цялото действие може да се извърши по:
+                  <p className="text-gray-700 leading-relaxed mb-4">
+                    <strong>Правило за умножение на възможности (съединения).</strong> Нека елементът <MathFormula tex="a" /> може
+                    да се избере по <MathFormula tex="m" /> различни начина и <strong>при всеки такъв избор</strong> елементът <MathFormula tex="b" /> може
+                    да се избере по <MathFormula tex="n" /> различни начина. Тогава броят на двойките <MathFormula tex="(a;\,b)" />, в които
+                    елементите са взети <strong>в този ред</strong>, е произведението
                   </p>
-                  <div className="bg-white rounded-2xl border border-emerald-100 p-4 text-center text-2xl text-emerald-900 mb-5">
+                  <div className="bg-white rounded-2xl border border-emerald-100 p-4 text-center text-2xl text-emerald-900 mb-4">
                     <MathFormula tex="m \cdot n" display={true} />
                   </div>
+                  <p className="text-gray-700 text-sm leading-relaxed mb-2">
+                    <strong>Обобщение.</strong> Правилото важи и за повече от два избора. Например при 2 вида аптечки, 3 вида
+                    светлоотразителни жилетки и 4 вида светлоотразителни триъгълници начините за избор са <MathFormula tex="2 \cdot 3 \cdot 4=24" />.
+                  </p>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-5 italic">
+                    Всички възможности могат да се онагледят с <strong>граф-дърво</strong>: от всеки избор на <MathFormula tex="a" /> излизат толкова клона, колкото са изборите на <MathFormula tex="b" />.
+                  </p>
                   <div className="rounded-2xl bg-white/80 border border-white p-4">
                     <p className="font-bold text-emerald-900 mb-3">Пример: съставяме тоалет</p>
                     <div className="flex flex-wrap items-center justify-center gap-3 text-center">
@@ -1215,15 +1242,20 @@
                      Определение: Пермутации
                    </h4>
                    <p className="text-gray-700 mb-4 text-lg leading-relaxed">
-                    Начинът на подреждане на <strong>всички</strong> елементи от едно множество в определен ред се нарича <strong>Пермутация</strong>. 
-                    Броят на всички възможни подредби на <MathFormula tex="n" /> различни елемента се бележи с <MathFormula tex="P_n" />.
+                    Всяко подреждане на дадени различни елементи, без да ги повтаряме, се нарича <strong>пермутация</strong> на тези елементи.
+                  </p>
+                  <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+                    Броят на пермутациите от <MathFormula tex="n" /> елемента се бележи с <MathFormula tex="P_n" /> и се пресмята по формулата:
                   </p>
                   <div className="bg-white p-5 rounded-xl text-center text-xl text-blue-900 shadow-sm border border-blue-100">
-                    <MathFormula tex="P_n = n! = 1 \cdot 2 \cdot 3 \cdots n" display={true} />
-                    <div className="text-sm text-gray-500 mt-2 font-sans">("<MathFormula tex="n" /> факториел")</div>
+                    <MathFormula tex="P_n = n(n-1)\ldots 2 \cdot 1 = n!" display={true} />
+                    <div className="text-sm text-gray-600 mt-2 font-sans leading-relaxed">
+                      Символът <MathFormula tex="n!" /> (чете се „<strong>ен факториел</strong>“) е кратък запис на произведението на числата от 1 до <MathFormula tex="n" />.
+                      По определение <MathFormula tex="0! = 1" />; <MathFormula tex="1! = 1" />; <MathFormula tex="2! = 2 \cdot 1 = 2" />; <MathFormula tex="3! = 3 \cdot 2 \cdot 1 = 6" /> и т.н.
+                    </div>
                   </div>
                   <p className="text-center mt-4 text-gray-600 text-lg">
-                    В нашата задача: <MathFormula tex="P_3 = 3! = 1 \cdot 2 \cdot 3 = 6" />
+                    В нашата задача: <MathFormula tex="P_3 = 3! = 3 \cdot 2 \cdot 1 = 6" />
                   </p>
                 </div>
               )}
@@ -1434,14 +1466,18 @@
                      Определение: Вариации (без повторение)
                    </h4>
                    <p className="text-gray-700 mb-4 text-lg leading-relaxed">
-                    Избирането на <MathFormula tex="k" /> елемента от общо <MathFormula tex="n" /> възможни и тяхното <strong>подреждане</strong> (където редът има значение) се нарича <strong>Вариация</strong>. 
-                    Бележи се с <MathFormula tex="V_n^k" />.
+                    <strong>Вариации без повторение</strong> на <MathFormula tex="n" /> елемента от <MathFormula tex="k" />-ти клас се наричат всички{' '}
+                    <MathFormula tex="k" />-членни редици, различаващи се една от друга <strong>по елементите</strong> или <strong>по реда</strong>, в който са взети.
+                  </p>
+                  <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+                    По-нататък ще ги наричаме просто вариации. Броят на вариациите на <MathFormula tex="n" /> елемента от <MathFormula tex="k" />-ти клас
+                    се означава <MathFormula tex="V_n^k" />. Долният индекс показва броя на елементите в разглежданото множество, а горният — класа на вариациите.
                   </p>
                   <div className="bg-white p-5 rounded-xl text-center text-xl text-emerald-900 shadow-sm border border-emerald-100">
-                    <MathFormula tex="V_n^k = \frac{n!}{(n - k)!} = n(n - 1) \cdots (n - k + 1)" display={true} />
+                    <MathFormula tex="V_n^k = n(n-1)\ldots(n-k+1) = \frac{n!}{(n-k)!}, \qquad k \le n" display={true} />
                   </div>
                   <p className="text-center mt-4 text-gray-600 text-lg">
-                    В нашата задача: <MathFormula tex="n=4" /> (коли), <MathFormula tex="k=2" /> (места). <MathFormula tex="V_4^2 = 4 \cdot 3 = 12" />
+                    В нашата задача: <MathFormula tex="n=4" /> (коли), <MathFormula tex="k=2" /> (места) — вариации на 4 елемента от 2-ри клас: <MathFormula tex="V_4^2 = 4 \cdot 3 = 12" />
                   </p>
                 </div>
               )}
@@ -1659,12 +1695,19 @@
                      Определение: Комбинации (без повторение)
                    </h4>
                    <p className="text-gray-700 mb-4 text-lg leading-relaxed">
-                    Избирането на <MathFormula tex="k" /> елемента от общо <MathFormula tex="n" /> възможни, като <strong>редът НЯМА значение</strong> (избираме просто група/подмножество), се нарича <strong>Комбинация</strong>. 
-                    Бележи се с <MathFormula tex="C_n^k" />.
+                    <strong>Комбинации без повторение</strong> на <MathFormula tex="n" /> елемента от <MathFormula tex="k" />-ти клас се наричат всички
+                    подмножества с <MathFormula tex="k" /> елемента на даденото множество с <MathFormula tex="n" /> елемента, за които <strong>редът на елементите не е от значение</strong>.
+                  </p>
+                  <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+                    Две комбинации се различават тогава, когато са различни <strong>по състав</strong>, а не по подреждането на елементите си.
+                    Например множествата <MathFormula tex="\{1, 3\}" /> и <MathFormula tex="\{3, 1\}" /> са една и съща комбинация, докато, разглеждани като вариации, са различни.
+                  </p>
+                  <p className="text-gray-700 mb-4 text-lg leading-relaxed">
+                    По-нататък ще ги наричаме просто комбинации. Броят на комбинациите на <MathFormula tex="n" /> елемента от <MathFormula tex="k" />-ти клас се бележи с <MathFormula tex="C_n^k" />{' '}
+                    и е равен на броя на вариациите <MathFormula tex="V_n^k" />, разделен на броя на пермутациите на <MathFormula tex="k" /> елемента <MathFormula tex="P_k" /> (т.е. броя на повторенията на елементите):
                   </p>
                   <div className="bg-white p-5 rounded-xl text-center text-xl text-purple-900 shadow-sm border border-purple-100 flex flex-col gap-2 items-center justify-center">
-                    <MathFormula tex="C_n^k = \frac{V_n^k}{P_k} = \frac{n!}{k!(n-k)!}" display={true} />
-                    <span className="text-sm font-sans text-gray-500 border-t pt-2 w-3/4">Разделяме на броя на пермутациите, за да премахнем дублиращите се подредби.</span>
+                    <MathFormula tex="C_n^k = \frac{V_n^k}{P_k} = \frac{n!}{k!(n-k)!}, \qquad 0 \le k \le n" display={true} />
                   </div>
                   <p className="text-center mt-4 text-gray-600 text-lg">
                     В нашата задача: <MathFormula tex="C_4^2 = \frac{V_4^2}{P_2} = \frac{12}{2} = 6" />
@@ -2048,11 +2091,11 @@
                       <div className="grid sm:grid-cols-2 gap-4 mb-8">
                         <div className="rounded-2xl bg-blue-50 border border-blue-200 p-5">
                           <h4 className="font-extrabold text-blue-900 text-xl mb-2">A ИЛИ B → събиране</h4>
-                          <p className="text-gray-700">При непресичащи се алтернативни избори общият брой е <MathFormula tex="m+n" />.</p>
+                          <p className="text-gray-700">Ако <MathFormula tex="a" /> се избира по <MathFormula tex="n" />, а <MathFormula tex="b" /> — по <MathFormula tex="m" /> начина, изборът на <MathFormula tex="a" /> <strong>или</strong> на <MathFormula tex="b" /> става по <MathFormula tex="n+m" /> начина.</p>
                         </div>
                         <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
                           <h4 className="font-extrabold text-emerald-900 text-xl mb-2">A И B → умножение</h4>
-                          <p className="text-gray-700">При последователни стъпки общият брой е <MathFormula tex="m \cdot n" />.</p>
+                          <p className="text-gray-700">Ако <MathFormula tex="a" /> се избира по <MathFormula tex="m" /> начина и при всеки такъв избор <MathFormula tex="b" /> — по <MathFormula tex="n" />, броят на наредените двойки <MathFormula tex="(a;\,b)" /> е <MathFormula tex="m \cdot n" />.</p>
                         </div>
                       </div>
 
@@ -2063,6 +2106,7 @@
                           <h4 className="text-xl font-bold text-blue-800 border-b border-blue-200 pb-2 mb-4 flex items-center gap-2">
                             1. Пермутации (<MathFormula tex="P_n" />)
                           </h4>
+                          <p className="text-gray-700 text-sm mb-4 leading-relaxed"><strong>Определение:</strong> всяко подреждане на дадени различни елементи, без да ги повтаряме.</p>
                           <ul className="space-y-3 mb-6">
                             <li className="flex items-start gap-2">
                               <span className="font-bold text-blue-500 mt-0.5">Въпрос:</span>
@@ -2078,7 +2122,7 @@
                             </li>
                           </ul>
                           <div className="bg-white p-3 rounded-xl text-center text-blue-900 border border-blue-100">
-                            <MathFormula tex="P_n = n!" display={true} />
+                            <MathFormula tex="P_n = n(n-1)\ldots 2 \cdot 1 = n!" display={true} />
                           </div>
                           <p className="text-sm text-gray-500 mt-3 italic">Напр: По колко начина можем да подредим 5 книги на един рафт?</p>
                         </div>
@@ -2088,6 +2132,7 @@
                           <h4 className="text-xl font-bold text-emerald-800 border-b border-emerald-200 pb-2 mb-4 flex items-center gap-2">
                             2. Вариации (<MathFormula tex="V_n^k" />)
                           </h4>
+                          <p className="text-gray-700 text-sm mb-4 leading-relaxed"><strong>Определение:</strong> всички <MathFormula tex="k" />-членни редици от <MathFormula tex="n" /> елемента, различаващи се по елементите или по реда, в който са взети.</p>
                           <ul className="space-y-3 mb-6">
                             <li className="flex items-start gap-2">
                               <span className="font-bold text-emerald-500 mt-0.5">Въпрос:</span>
@@ -2103,7 +2148,7 @@
                             </li>
                           </ul>
                           <div className="bg-white p-3 rounded-xl text-center text-emerald-900 border border-emerald-100">
-                            <MathFormula tex="V_n^k = \frac{n!}{(n-k)!}" display={true} />
+                            <MathFormula tex="\begin{gathered} V_n^k = n(n-1)\ldots(n-k+1) \\ = \frac{n!}{(n-k)!} \end{gathered}" display={true} />
                           </div>
                           <p className="text-sm text-gray-500 mt-3 italic">Напр: Избор на председател и секретар от клас с 20 ученици.</p>
                         </div>
@@ -2113,6 +2158,7 @@
                           <h4 className="text-xl font-bold text-purple-800 border-b border-purple-200 pb-2 mb-4 flex items-center gap-2">
                             3. Комбинации (<MathFormula tex="C_n^k" />)
                           </h4>
+                          <p className="text-gray-700 text-sm mb-4 leading-relaxed"><strong>Определение:</strong> всички подмножества с <MathFormula tex="k" /> елемента на множество с <MathFormula tex="n" /> елемента; редът на елементите не е от значение.</p>
                           <ul className="space-y-3 mb-6">
                             <li className="flex items-start gap-2">
                               <span className="font-bold text-purple-500 mt-0.5">Въпрос:</span>
@@ -2128,7 +2174,7 @@
                             </li>
                           </ul>
                           <div className="bg-white p-3 rounded-xl text-center text-purple-900 border border-purple-100">
-                            <MathFormula tex="C_n^k = \frac{V_n^k}{P_k}" display={true} />
+                            <MathFormula tex="C_n^k = \frac{V_n^k}{P_k} = \frac{n!}{k!(n-k)!}" display={true} />
                           </div>
                           <p className="text-sm text-gray-500 mt-3 italic">Напр: Избор на двама дежурни от клас с 20 ученици.</p>
                         </div>
